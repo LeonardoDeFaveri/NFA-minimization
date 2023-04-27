@@ -1,6 +1,6 @@
 use algorithms::calc_right_language;
 
-use crate::algorithms::calc_relation;
+use crate::algorithms::{calc_relation, initialize_rel_table};
 
 mod algorithms;
 mod nfa;
@@ -63,10 +63,10 @@ fn main() {
 
     let right = calc_relation(&nfa, &right_language);
     let left = calc_relation(&rev_nfa, &left_language);
-    
+
     right_row.clear();
     right_row.push('[');
-    for (source, dest) in right {
+    for (source, dest) in &right {
         right_row.push_str(&format!("({}, {})", source, dest));
         right_row.push(',');
     }
@@ -75,7 +75,7 @@ fn main() {
 
     left_row.clear();
     left_row.push('[');
-    for (source, dest) in left {
+    for (source, dest) in &left {
         left_row.push_str(&format!("({}, {})", source, dest));
         left_row.push(',');
     }
@@ -84,4 +84,15 @@ fn main() {
 
     println!("Right preorder:\n{}", right_row);
     println!("Left preorder:\n{}", left_row);
+
+    let table = initialize_rel_table(&nfa, right, left);
+    println!("\n(p, q)\t| Right\t| Left\t| Loop(p)");
+    println!("-------------------------------");
+    for (p, q) in table.keys() {
+        let value = table.get(&(p.to_owned(), q.to_owned())).unwrap();
+        println!(
+            "({}, {})\t| {}\t| {}\t| {}",
+            p, q, value.0, value.1, value.2
+        );
+    }
 }

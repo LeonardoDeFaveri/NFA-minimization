@@ -137,14 +137,14 @@ where
     languages
 }
 
-struct WaitingContext<'a, S, A> {
+struct Context<'a, S, A> {
     state: S,
     missing_loops: HashSet<&'a A>,
 }
 
-impl<'a, S, A> WaitingContext<'a, S, A> {
+impl<'a, S, A> Context<'a, S, A> {
     pub fn new(state: S, missing_loops: HashSet<&'a A>) -> Self {
-        WaitingContext {
+        Context {
             state,
             missing_loops,
         }
@@ -255,7 +255,7 @@ fn calc_relation_aux<S, A>(
         if missing.is_empty() {
             rel.insert((state.to_owned(), other.to_owned()));
         } else {
-            waiting_contexts.push(WaitingContext::new(other, missing));
+            waiting_contexts.push(Context::new(other, missing));
         }
     }
 
@@ -279,4 +279,102 @@ fn calc_relation_aux<S, A>(
             rel.insert((state.to_owned(), context.state.to_owned()));
         }
     }
+}
+
+pub fn initialize_rel_table<S, A>(
+    nfa: &Nfa<S, A>,
+    right_rel: HashSet<(S, S)>,
+    left_rel: HashSet<(S, S)>,
+) -> HashMap<(S, S), (bool, bool, bool)>
+where
+    S: Eq + Hash + Clone + Debug + Display,
+    A: Eq + Hash + Clone + Debug + Display,
+{
+    let mut table = HashMap::new();
+    let loops = find_if_loops(&nfa);
+
+    for (p, q) in right_rel {
+        let has_loop = loops.contains(&p);
+        table.insert((p.clone(), q.clone()), (true, false, has_loop));
+    }
+
+    for (p, q) in left_rel {
+        if table.contains_key(&(p.clone(), q.clone())) {
+            let mut value = table.get_mut(&(p, q)).unwrap();
+            value.1 = true;
+        } else {
+            let has_loop = loops.contains(&p);
+            table.insert((p.clone(), q.clone()), (false, true, has_loop));
+        }
+    }
+
+    table
+}
+
+fn find_if_loops<S, A>(nfa: &Nfa<S, A>) -> HashSet<S>
+where
+    S: Eq + Hash + Clone + Debug + Display,
+    A: Eq + Hash + Clone + Debug + Display,
+{
+    let mut result = HashSet::new();
+
+    let mut discovery_time = HashMap::new();
+    let mut finish_time = HashMap::new();
+
+    for state in nfa.states() {
+        discovery_time.insert(state, 0);
+        finish_time.insert(state, 0);
+    }
+
+    for state in nfa.initial_states() {
+        let mut time = 0;
+        find_if_loops_aux(
+            nfa,
+            state,
+            &mut result,
+            &mut time,
+            &mut discovery_time,
+            &mut finish_time,
+        );
+    }
+
+    result
+}
+
+fn find_if_loops_aux<'a, S, A>(
+    nfa: &'a Nfa<S, A>,
+    state: &'a S,
+    loops: &mut HashSet<S>,
+    time: &mut u64,
+    dt: &mut HashMap<&'a S, u64>,
+    ft: &mut HashMap<&'a S, u64>,
+) where
+    S: Eq + Hash + Clone + Debug + Display,
+    A: Eq + Hash + Clone + Debug + Display,
+{
+    *time += 1;
+    dt.insert(state, *time);
+    let state_dt = *time;
+
+    for symbol in nfa.symbols() {
+        let result = nfa.eval_symbol_from_state(state, symbol);
+        if result.is_err() {
+            continue;
+        }
+
+        for other in result.unwrap() {
+            let o_dt = dt.get(other).unwrap();
+            if *o_dt > 0 {
+                let o_ft = ft.get(other).unwrap();
+                if state_dt >= *o_dt && *o_ft == 0 {
+                    loops.insert(other.to_owned());
+                }
+            } else {
+                find_if_loops_aux(nfa, other, loops, time, dt, ft);
+            }
+        }
+    }
+
+    *time += 1;
+    ft.insert(state, *time);
 }
