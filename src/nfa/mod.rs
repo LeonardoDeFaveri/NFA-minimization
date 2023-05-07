@@ -425,10 +425,14 @@ impl FromStr for Nfa<String, String> {
                             Id::Anonymous(id) => id,
                         };
 
+                        // If `source` starts with `dummy`, `dest` is an initial
+                        // note
                         if source.starts_with("dummy") {
                             nfa.add_state(dest.clone());
                             let _ = nfa.add_initial_state(dest);
                         } else {
+                            // `source` is an actual node, so try to see if
+                            // there is a valid transition
                             if label.is_none() {
                                 return Err(format!(
                                     "Transition on no symbol (edge without label attribute)"
