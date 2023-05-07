@@ -14,42 +14,6 @@ fn main() {
     let source = std::fs::read_to_string("nfa.gv").unwrap();
     let nfa = Nfa::from_str(&source).unwrap();
 
-    let out = nfa.to_string();
-    std::fs::write("read_nfa.gv", out);
-
-    std::process::exit(0);
-
-    let mut nfa = nfa::Nfa::<&str, char>::new();
-    nfa.add_state("0");
-    nfa.add_state("1");
-    nfa.add_state("2");
-    nfa.add_state("3");
-    nfa.add_state("4");
-    nfa.add_state("5");
-
-    let _ = nfa.add_initial_state("0");
-    let _ = nfa.add_final_state("5");
-
-    nfa.add_symbol('a');
-    nfa.add_symbol('b');
-    nfa.add_symbol('c');
-    nfa.add_symbol('x');
-    nfa.add_symbol('y');
-
-    let _ = nfa.add_transition("0", 'a', "1");
-    let _ = nfa.add_transition("0", 'a', "2");
-    let _ = nfa.add_transition("0", 'x', "2");
-    let _ = nfa.add_transition("0", 'a', "3");
-    let _ = nfa.add_transition("1", 'b', "1");
-    let _ = nfa.add_transition("1", 'c', "5");
-    let _ = nfa.add_transition("2", 'c', "5");
-    let _ = nfa.add_transition("2", 'y', "5");
-    let _ = nfa.add_transition("2", 'b', "4");
-    let _ = nfa.add_transition("4", 'b', "4");
-    let _ = nfa.add_transition("4", 'c', "5");
-    let _ = nfa.add_transition("3", 'b', "2");
-    let _ = nfa.add_transition("3", 'b', "3");
-
     //let dot_notation = nfa.to_string();
     //let _ = std::fs::write("nfa.gv", dot_notation);
     let rev_nfa = nfa.reverse();

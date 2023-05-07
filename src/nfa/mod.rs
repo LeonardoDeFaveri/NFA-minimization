@@ -375,6 +375,10 @@ impl FromStr for Nfa<String, String> {
                         Id::Plain(id) => id,
                         Id::Anonymous(id) => id,
                     };
+                    // Dummy nodes must not be added to `nfa`
+                    if node_id.starts_with("dummy") {
+                        continue;
+                    }
                     nfa.add_state(node_id.clone());
 
                     if previous_node_is_final {

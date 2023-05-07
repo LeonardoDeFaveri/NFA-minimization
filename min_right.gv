@@ -2,21 +2,21 @@ digraph {
 	rankdir = LR;
 	size = "30,20";
 	node [shape = point]; "dummy0"
-	node [shape = circle]; "1"
-	"dummy0" -> "1";
-	node [shape = circle]; "0";
+	node [shape = circle]; "3"
+	"dummy0" -> "3";
 	node [shape = circle]; "2";
-	node [shape = doublecircle]; "3";
+	node [shape = doublecircle]; "0";
 	node [shape = circle]; "4";
-	"4" -> "2" [label = "b"];
+	node [shape = circle]; "1";
+	"1" -> "1" [label = "b"];
+	"1" -> "0" [label = "c"];
 	"4" -> "4" [label = "b"];
-	"2" -> "3" [label = "c"];
-	"2" -> "3" [label = "y"];
-	"2" -> "0" [label = "b"];
-	"1" -> "2" [label = "x"];
-	"1" -> "0" [label = "a"];
-	"1" -> "2" [label = "a"];
-	"1" -> "4" [label = "a"];
-	"0" -> "0" [label = "b"];
-	"0" -> "3" [label = "c"];
+	"4" -> "2" [label = "b"];
+	"2" -> "1" [label = "b"];
+	"2" -> "0" [label = "y"];
+	"2" -> "0" [label = "c"];
+	"3" -> "2" [label = "x"];
+	"3" -> "1" [label = "a"];
+	"3" -> "4" [label = "a"];
+	"3" -> "2" [label = "a"];
 }
