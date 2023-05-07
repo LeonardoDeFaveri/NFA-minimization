@@ -1,13 +1,24 @@
 use core::hash::Hash;
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
+use std::str::FromStr;
 
 use algorithms::*;
+
+use crate::nfa::Nfa;
 
 mod algorithms;
 mod nfa;
 
 fn main() {
+    let source = std::fs::read_to_string("nfa.gv").unwrap();
+    let nfa = Nfa::from_str(&source).unwrap();
+
+    let out = nfa.to_string();
+    std::fs::write("read_nfa.gv", out);
+
+    std::process::exit(0);
+
     let mut nfa = nfa::Nfa::<&str, char>::new();
     nfa.add_state("0");
     nfa.add_state("1");

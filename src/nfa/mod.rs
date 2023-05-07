@@ -1,7 +1,9 @@
+use graphviz_rust::{dot_structures::{Attribute, EdgeTy, Stmt, Vertex, Id, GraphAttributes}};
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Debug, Display},
     hash::Hash,
+    str::FromStr,
 };
 
 #[derive(Debug)]
@@ -341,5 +343,128 @@ where
         result.push('}');
 
         result
+    }
+}
+
+impl FromStr for Nfa<String, String> {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let raw_graph = graphviz_rust::parse(s)?;
+        let stmts = match raw_graph {
+            graphviz_rust::dot_structures::Graph::Graph {
+                id: _,
+                strict: _,
+                stmts,
+            } => stmts,
+            graphviz_rust::dot_structures::Graph::DiGraph {
+                id: _,
+                strict: _,
+                stmts,
+            } => stmts,
+        };
+        let mut  nfa = Nfa::new();
+
+        let mut previous_node_is_final = false;
+        for stmt in stmts {
+            match stmt {
+                Stmt::Node(node) => {
+                    let node_id = match node.id.0 {
+                        Id::Html(id) => id,
+                        Id::Escaped(id) => id[1..id.len() - 1].into(),
+                        Id::Plain(id) => id,
+                        Id::Anonymous(id) => id,
+                    };
+                    nfa.add_state(node_id.clone());
+
+                    if previous_node_is_final {
+                        let _ = nfa.add_final_state(node_id);
+                        previous_node_is_final = false;
+                    }
+                }
+                Stmt::Edge(edge) => {
+                    let mut label = None;
+                    
+                    // Scan attributes to look for a label
+                    for Attribute(name, value) in edge.attributes {
+                        if name.to_string().to_ascii_lowercase() == "label" {
+                            label = Some(match value {
+                                Id::Html(value) => value,
+                                Id::Escaped(value) => value[1..value.len() - 1].into(),
+                                Id::Plain(value) => value,
+                                Id::Anonymous(value) => value,
+                            });
+                            break;
+                        }
+                    }
+
+                    if let EdgeTy::Pair(source_vertex, dest_vertex) = edge.ty {
+                        let mut source = None;
+                        if let Vertex::N(source_id) = source_vertex {
+                            source = Some(source_id.0);
+                        }
+                        let mut dest = None;
+                        if let Vertex::N(dest_id) = dest_vertex {
+                            dest = Some(dest_id.0);
+                        }
+
+                        if source.is_none() || dest.is_none() {
+                            return Err(format!("Source and dest nodes in edges must be node ids"));
+                        }
+
+                        let source = match source.unwrap() {
+                            Id::Html(id) => id,
+                            Id::Escaped(id) => id[1..id.len() - 1].into(),
+                            Id::Plain(id) => id,
+                            Id::Anonymous(id) => id,
+                        };
+                        let dest = match dest.unwrap() {
+                            Id::Html(id) => id,
+                            Id::Escaped(id) => id[1..id.len() - 1].into(),
+                            Id::Plain(id) => id,
+                            Id::Anonymous(id) => id,
+                        };
+
+                        if source.starts_with("dummy") {
+                            nfa.add_state(dest.clone());
+                            let _ = nfa.add_initial_state(dest);
+                        } else {
+                            if label.is_none() {
+                                return Err(format!(
+                                    "Transition on no symbol (edge without label attribute)"
+                                ));
+                            }
+                            let label = label.unwrap();
+                            nfa.add_symbol(label.clone());
+                            let _ = nfa.add_transition(source, label, dest);
+                        }
+                    } else {
+                        return Err(format!("Edges must be pairs (source, dest) with label attribute set to be the transition symbol"));
+                    }
+                },
+                Stmt::GAttribute(graph_attr) => {
+                    if let GraphAttributes::Node(attributes) = graph_attr {
+                        for Attribute(name, value) in attributes {
+                            if name.to_string().to_lowercase() == "shape" {
+                                let value = match value {
+                                    Id::Html(value) => value,
+                                    Id::Escaped(value) => value[1..value.len() - 1].into(),
+                                    Id::Plain(value) => value,
+                                    Id::Anonymous(value) => value,
+                                };
+                                
+                                if value == "doublecircle" {
+                                    previous_node_is_final = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                _ => (),
+            }
+        }
+
+        Ok(nfa)
     }
 }

@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 disjoint-hash-set = "1.0.0"
+graphviz-rust = "0.6.2"
