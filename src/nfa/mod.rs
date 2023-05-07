@@ -37,7 +37,7 @@ where
     A: Eq + Hash + Clone + Debug + Display,
 {
     /// Creates an empty NFA with no states, nor transitions.
-    pub fn new() -> Nfa<S, A> {
+    pub fn new() -> Self {
         Nfa {
             states: HashSet::new(),
             symbols: HashSet::new(),

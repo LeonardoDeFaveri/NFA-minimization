@@ -4,6 +4,8 @@ use std::{
     hash::Hash,
 };
 
+pub mod minimization;
+
 use crate::nfa::Nfa;
 
 pub struct Path<S, A> {
@@ -12,7 +14,7 @@ pub struct Path<S, A> {
 }
 
 impl<S, A> Path<S, A> {
-    pub fn new(symbol: A, state: S) -> Path<S, A> {
+    pub fn new(symbol: A, state: S) -> Self {
         Path {
             transition_symbol: symbol,
             reached_state: state,
@@ -20,6 +22,10 @@ impl<S, A> Path<S, A> {
     }
 }
 
+/// Represents the language recognized from a certain state.
+/// It is made up of all the words made self-loops on the state followed
+/// by out-transitions towards some other state and the language of those
+/// states. The pair (out_transition, reached_state) is called `path`.
 pub struct Language<S, A>
 where
     S: Eq + Hash + Clone + Debug + Display,
@@ -34,17 +40,19 @@ where
     S: Eq + Hash + Clone + Debug + Display,
     A: Eq + Hash + Clone + Debug + Display,
 {
-    pub fn new() -> Language<S, A> {
+    pub fn new() -> Self {
         Language {
             loops: HashSet::new(),
             paths: Vec::new(),
         }
     }
 
+    /// Adds `symbol` to the set of symbols for which there is a self-loop
     pub fn push_loop(&mut self, symbol: A) {
         self.loops.insert(symbol);
     }
 
+    /// Adds `path` to the set of paths
     pub fn push_path(&mut self, path: Path<S, A>) {
         self.paths.push(path);
     }
@@ -57,6 +65,8 @@ where
         &self.paths
     }
 
+    /// Returns `true` if the language is empty. So, if there's neither
+    /// a self-loop  nor a path.
     pub fn is_empty(&self) -> bool {
         self.loops.is_empty() && self.paths.is_empty()
     }
@@ -151,6 +161,9 @@ impl<'a, S, A> Context<'a, S, A> {
     }
 }
 
+/// Given an nfa and the relative language (either right or left), calculates
+/// the set of pairs (s1, s2) for which the language of s1 is a subset of those
+/// of s2.
 pub fn calc_relation<S, A>(
     nfa: &Nfa<S, A>,
     language: &HashMap<S, Language<S, A>>,
@@ -281,10 +294,17 @@ fn calc_relation_aux<S, A>(
     }
 }
 
+/// Given an nfa and both the right and left languages of its states, creates
+/// a table that associates every pair (s1, s2) to a triple of booleans
+/// `(right, left, loop)`.
+/// - `right`: `true` if `(s1, s2)` is in `right_rel`;
+/// - `left`: `true` if `(s1, s2)` is in `left_rel`;
+/// - `loop`: `true` if there is a path that starts in `s1` and returns to it,
+/// forming a cycle;
 pub fn initialize_rel_table<S, A>(
     nfa: &Nfa<S, A>,
-    right_rel: HashSet<(S, S)>,
-    left_rel: HashSet<(S, S)>,
+    right_rel: &HashSet<(S, S)>,
+    left_rel: &HashSet<(S, S)>,
 ) -> HashMap<(S, S), (bool, bool, bool)>
 where
     S: Eq + Hash + Clone + Debug + Display,
@@ -300,7 +320,7 @@ where
 
     for (p, q) in left_rel {
         if table.contains_key(&(p.clone(), q.clone())) {
-            let mut value = table.get_mut(&(p, q)).unwrap();
+            let mut value = table.get_mut(&(p.clone(), q.clone())).unwrap();
             value.1 = true;
         } else {
             let has_loop = loops.contains(&p);
@@ -311,6 +331,8 @@ where
     table
 }
 
+/// Given an nfa returns a set of all the states for which exists a path
+/// that begins and ends in them.
 fn find_if_loops<S, A>(nfa: &Nfa<S, A>) -> HashSet<S>
 where
     S: Eq + Hash + Clone + Debug + Display,
@@ -377,4 +399,53 @@ fn find_if_loops_aux<'a, S, A>(
 
     *time += 1;
     ft.insert(state, *time);
+}
+
+/// Ginen a vector of sets of statea, creates a new nfa in which
+/// each set of states is associated to one state.
+pub fn build_minimized<S, A>(nfa: &Nfa<S, A>, new_states: &Vec<HashSet<S>>) -> Nfa<usize, A>
+where
+    S: Eq + Hash + Clone + Debug + Display,
+    A: Eq + Hash + Clone + Debug + Display,
+{
+    let mut new_nfa = Nfa::new();
+    let mut containers = HashMap::new();
+
+    // Adds states to `new_nfa`
+    for (i, set) in new_states.iter().enumerate() {
+        new_nfa.add_state(i);
+
+        let mut is_initial = false;
+        let mut is_final = false;
+
+        for state in set {
+            containers.insert(state.clone(), i);
+            is_initial = nfa.is_initial(&state).unwrap();
+            is_final = nfa.is_final(&state).unwrap();
+        }
+
+        if is_initial {
+            let _ = new_nfa.add_initial_state(i);
+        }
+        if is_final {
+            let _ = new_nfa.add_final_state(i);
+        }
+    }
+
+    // Adds symbols to `new_nfa`
+    for a in nfa.symbols() {
+        new_nfa.add_symbol(a.clone());
+    }
+
+    // Adds transitions to `new_nfa`
+    for p in nfa.states() {
+        for a in nfa.symbols() {
+            let reachables = nfa.eval_symbol_from_state(p, a).unwrap();
+            for q in reachables {
+                let _ = new_nfa.add_transition(containers[p], a.clone(), containers[q]);
+            }
+        }
+    }
+
+    new_nfa
 }
