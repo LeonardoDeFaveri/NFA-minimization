@@ -190,6 +190,8 @@ where
     rel
 }
 
+/// Given a state `state` populates `rel` with all the pairs `(state, o)`
+/// for which `o` contains `state`.
 fn calc_relation_aux<S, A>(
     nfa: &Nfa<S, A>,
     language: &HashMap<S, Language<S, A>>,
@@ -211,9 +213,9 @@ fn calc_relation_aux<S, A>(
 
     let mut non_suitable_container = HashSet::new();
     non_suitable_container.insert(state.to_owned());
-    for state in nfa.states() {
-        if language.get(state).unwrap().is_empty() {
-            non_suitable_container.insert(state.to_owned());
+    for other in nfa.states() {
+        if language.get(other).unwrap().is_empty() {
+            non_suitable_container.insert(other.to_owned());
         }
     }
 
@@ -232,7 +234,8 @@ fn calc_relation_aux<S, A>(
                     continue;
                 }
 
-                calc_relation_aux(nfa, language, &other_path.reached_state, checked, rel);
+                //calc_relation_aux(nfa, language, &other_path.reached_state, checked, rel);
+                calc_relation_aux(nfa, language, &path.reached_state, checked, rel);
                 if path.reached_state != other_path.reached_state
                     && !rel
                         .contains(&(path.reached_state.clone(), other_path.reached_state.clone()))

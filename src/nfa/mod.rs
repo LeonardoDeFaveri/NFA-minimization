@@ -1,4 +1,4 @@
-use graphviz_rust::{dot_structures::{Attribute, EdgeTy, Stmt, Vertex, Id, GraphAttributes}};
+use graphviz_rust::dot_structures::{Attribute, EdgeTy, GraphAttributes, Id, Stmt, Vertex};
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Debug, Display},
@@ -363,7 +363,7 @@ impl FromStr for Nfa<String, String> {
                 stmts,
             } => stmts,
         };
-        let mut  nfa = Nfa::new();
+        let mut nfa = Nfa::new();
 
         let mut previous_node_is_final = false;
         for stmt in stmts {
@@ -388,7 +388,7 @@ impl FromStr for Nfa<String, String> {
                 }
                 Stmt::Edge(edge) => {
                     let mut label = None;
-                    
+
                     // Scan attributes to look for a label
                     for Attribute(name, value) in edge.attributes {
                         if name.to_string().to_ascii_lowercase() == "label" {
@@ -449,7 +449,7 @@ impl FromStr for Nfa<String, String> {
                     } else {
                         return Err(format!("Edges must be pairs (source, dest) with label attribute set to be the transition symbol"));
                     }
-                },
+                }
                 Stmt::GAttribute(graph_attr) => {
                     if let GraphAttributes::Node(attributes) = graph_attr {
                         for Attribute(name, value) in attributes {
@@ -460,7 +460,7 @@ impl FromStr for Nfa<String, String> {
                                     Id::Plain(value) => value,
                                     Id::Anonymous(value) => value,
                                 };
-                                
+
                                 if value == "doublecircle" {
                                     previous_node_is_final = true;
                                     break;

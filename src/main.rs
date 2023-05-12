@@ -14,8 +14,15 @@ fn main() {
     let source = std::fs::read_to_string("nfa.gv").unwrap();
     let nfa = Nfa::from_str(&source).unwrap();
 
-    //let dot_notation = nfa.to_string();
-    //let _ = std::fs::write("nfa.gv", dot_notation);
+    let dot_notation = nfa.to_string();
+    let _ = std::fs::write("nfa.gv", dot_notation);
+    let output = std::process::Command::new("dot")
+        .arg("-T")
+        .arg("pdf")
+        .arg("nfa.gv")
+        .output()
+        .expect("Error while writing nfa to pdf");
+    let _ = std::fs::write("nfa.pdf", output.stdout);
     let rev_nfa = nfa.reverse();
 
     let right_language = calc_right_language(&rev_nfa);
@@ -50,18 +57,20 @@ fn main() {
     println!("Right preorder:\n{}", right_row);
     println!("Left preorder:\n{}", left_row);
     let table = initialize_rel_table(&nfa, &right, &left);
-    println!("\n(p, q)\t| Right\t| Left\t| Loop(p)");
-    println!("-------------------------------");
+    println!("\n(p, q)  \t| Right\t| Left\t| Loop(p)");
+    println!("-----------------------------------------");
     for (p, q) in table.keys() {
         let value = table.get(&(p.to_owned(), q.to_owned())).unwrap();
         println!(
-            "({}, {})\t| {}\t| {}\t| {}",
+            "({}, {})  \t| {}\t| {}\t| {}",
             p, q, value.0, value.1, value.2
         );
     }
 
-    println!("Right equivalence classes");
     let res = algorithms::minimization::right_eq(nfa.states(), &right);
+    let min_right_size = res.len();
+
+    println!("Right equivalence classes");
     for (i, r) in res.iter().enumerate() {
         print!("{}: {{", i);
         for state in r {
@@ -72,10 +81,19 @@ fn main() {
 
     let min_right = algorithms::build_minimized(&nfa, &res);
     let dot_notation = min_right.to_string();
-    let _ = std::fs::write("min_right.gv", dot_notation);
+    let _ = std::fs::write("minimized/right.gv", dot_notation);
+    let output = std::process::Command::new("dot")
+        .arg("-T")
+        .arg("pdf")
+        .arg("minimized/right.gv")
+        .output()
+        .expect("Error while writing minimized nfa to pdf");
+    let _ = std::fs::write("minimized/right.pdf", output.stdout);
+
+    let res = algorithms::minimization::right_eq(nfa.states(), &left);
+    let min_left_size = res.len();
 
     println!("Left equivalence classes");
-    let res = algorithms::minimization::right_eq(nfa.states(), &left);
     for (i, r) in res.iter().enumerate() {
         print!("{}: {{", i);
         for state in r {
@@ -86,7 +104,46 @@ fn main() {
 
     let min_left = algorithms::build_minimized(&nfa, &res);
     let dot_notation = min_left.to_string();
-    let _ = std::fs::write("min_left.gv", dot_notation);
+    let _ = std::fs::write("minimized/left.gv", dot_notation);
+    let output = std::process::Command::new("dot")
+        .arg("-T")
+        .arg("pdf")
+        .arg("minimized/left.gv")
+        .output()
+        .expect("Error while writing minimized nfa to pdf");
+    let _ = std::fs::write("minimized/left.pdf", output.stdout);
+
+    let res = algorithms::minimization::preorder_1(nfa.states(), &table);
+    let min_pre_size = res.len();
+
+    println!("Preorder equivalence classes");
+    for (i, r) in res.iter().enumerate() {
+        print!("{}: {{", i);
+        for state in r {
+            print!("{}, ", state);
+        }
+        println!("}}");
+    }
+
+    let min_pre1 = algorithms::build_minimized(&nfa, &res);
+    let dot_notation = min_pre1.to_string();
+    let _ = std::fs::write("minimized/pre1.gv", dot_notation);
+    let output = std::process::Command::new("dot")
+        .arg("-T")
+        .arg("pdf")
+        .arg("minimized/pre1.gv")
+        .output()
+        .expect("Error while writing minimized nfa to pdf");
+    let _ = std::fs::write("minimized/pre1.pdf", output.stdout);
+
+    println!("| Original | Right Eq | Left Eq | Preorder |");
+    println!(
+        "| {} | {} | {} | {} |",
+        nfa.states().len(),
+        min_right_size,
+        min_left_size,
+        min_pre_size
+    );
 }
 
 fn print_language<S, A>(languages: &HashMap<S, Language<S, A>>)
