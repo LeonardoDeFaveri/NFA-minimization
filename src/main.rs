@@ -7,7 +7,6 @@ use algorithms::*;
 use nfa::Nfa;
 
 mod algorithms;
-mod algorithms2;
 mod nfa;
 
 fn main() {
@@ -24,16 +23,15 @@ fn main() {
         .expect("Error while writing nfa to pdf");
     let _ = std::fs::write("nfa.pdf", output.stdout);
     let rev_nfa = nfa.reverse();
-
-    /*let right_language = algorithms2::calc_right_languages(&nfa);
-    let left_language = algorithms2::calc_right_languages(&rev_nfa);
-
-    println!("Right language");
-    println!("{}", right_language);
-    println!("Left language");
-    println!("{}", left_language);*/
-
-    //std::process::exit(0);
+    let dot_notation = rev_nfa.to_string();
+    let _ = std::fs::write("rev_nfa.gv", dot_notation);
+    let output = std::process::Command::new("dot")
+        .arg("-T")
+        .arg("pdf")
+        .arg("rev_nfa.gv")
+        .output()
+        .expect("Error while writing rev_nfa to pdf");
+    let _ = std::fs::write("rev_nfa.pdf", output.stdout);
 
     let right_language = calc_right_language(&rev_nfa);
     let left_language = calc_right_language(&nfa);

@@ -147,20 +147,6 @@ where
     languages
 }
 
-struct Context<'a, S, A> {
-    state: S,
-    missing_loops: HashSet<&'a A>,
-}
-
-impl<'a, S, A> Context<'a, S, A> {
-    pub fn new(state: S, missing_loops: HashSet<&'a A>) -> Self {
-        Context {
-            state,
-            missing_loops,
-        }
-    }
-}
-
 /// Given an nfa and the relative language (either right or left), calculates
 /// the set of pairs (s1, s2) for which the language of s1 is a subset of those
 /// of s2.
@@ -219,7 +205,8 @@ fn calc_relation_aux<S, A>(
         }
     }
 
-    // First cleaning
+    // First cleaning: removing all states that clearly cannot be containers
+    // for state
     for path in state_lang.paths() {
         for other in nfa.states() {
             if non_suitable_container.contains(other) {
@@ -234,7 +221,6 @@ fn calc_relation_aux<S, A>(
                     continue;
                 }
 
-                //calc_relation_aux(nfa, language, &other_path.reached_state, checked, rel);
                 calc_relation_aux(nfa, right_languages, &path.reached_state, checked, rel);
                 if path.reached_state != other_path.reached_state
                     && !rel
@@ -243,6 +229,13 @@ fn calc_relation_aux<S, A>(
                     continue;
                 }
 
+                found = true;
+            }
+
+            // Solution to triangualar problem
+            // If I'm reaching a state with a transition on a symbol for which
+            // the reached state has a self-loop, the path is included in the loop
+            if path.reached_state == *other && other_lang.loops.contains(&path.transition_symbol) {
                 found = true;
             }
 
@@ -257,9 +250,10 @@ fn calc_relation_aux<S, A>(
         }
     }
 
-    // Second cleaning
+    // Second cleaning: for each state that could be a container, checks if
+    // state's self-loops corresponds to either self-loops of that other state
+    // or out-transitions to states that contains state
     let mut waiting_contexts = Vec::new();
-
     for other in nfa.states() {
         if non_suitable_container.contains(other) {
             continue;
@@ -269,17 +263,24 @@ fn calc_relation_aux<S, A>(
         let missing: HashSet<&A> = state_lang.loops().difference(other_lang.loops()).collect();
 
         if missing.is_empty() {
+            // Every self-loop on state, is also a self-loop on other so,
+            // (state, other) can be added to rel without any doubt
             rel.insert((state.to_owned(), other.to_owned()));
         } else {
-            waiting_contexts.push(Context::new(other, missing));
+            // There is at least on self-loop on state that doesn't correspond
+            // to a self-loop on other, so further checks are necessary
+            waiting_contexts.push((other, missing)) //Context::new(other, missing));
         }
     }
 
-    for context in waiting_contexts {
-        let other_lang = right_languages.get(context.state).unwrap();
-        let mut to_solve_count = context.missing_loops.len();
+    // For each pair (reached_state, missing_self_loops) checks if reached_state
+    // has an out-transition towards a state that containes state for each
+    // symbol in missing_self_loops
+    for (reached_state, missing_self_loops) in waiting_contexts {
+        let other_lang = right_languages.get(reached_state).unwrap();
+        let mut to_solve_count = missing_self_loops.len();
 
-        for symbol in context.missing_loops {
+        for symbol in missing_self_loops {
             for other_path in other_lang.paths() {
                 if other_path.transition_symbol == *symbol
                     && (*state == other_path.reached_state
@@ -291,8 +292,11 @@ fn calc_relation_aux<S, A>(
             }
         }
 
+        // For each symbol in missing_self_loops there's an out-transition
+        // from reached_state to another state that can contain state, so
+        // reached state can containe state, too
         if to_solve_count == 0 {
-            rel.insert((state.to_owned(), context.state.to_owned()));
+            rel.insert((state.to_owned(), reached_state.to_owned()));
         }
     }
 }
