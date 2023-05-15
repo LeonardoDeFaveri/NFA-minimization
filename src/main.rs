@@ -4,10 +4,10 @@ use std::fmt::{Debug, Display};
 use std::str::FromStr;
 
 use algorithms::*;
-
-use crate::nfa::Nfa;
+use nfa::Nfa;
 
 mod algorithms;
+mod algorithms2;
 mod nfa;
 
 fn main() {
@@ -25,6 +25,16 @@ fn main() {
     let _ = std::fs::write("nfa.pdf", output.stdout);
     let rev_nfa = nfa.reverse();
 
+    /*let right_language = algorithms2::calc_right_languages(&nfa);
+    let left_language = algorithms2::calc_right_languages(&rev_nfa);
+
+    println!("Right language");
+    println!("{}", right_language);
+    println!("Left language");
+    println!("{}", left_language);*/
+
+    //std::process::exit(0);
+
     let right_language = calc_right_language(&rev_nfa);
     let left_language = calc_right_language(&nfa);
 
@@ -33,8 +43,8 @@ fn main() {
     println!("Left language:");
     print_language(&left_language);
 
-    let right = calc_relation(&nfa, &right_language);
-    let left = calc_relation(&rev_nfa, &left_language);
+    let right = algorithms::calc_relation(&nfa, &right_language);
+    let left = algorithms::calc_relation(&rev_nfa, &left_language);
 
     let mut right_row = String::new();
     right_row.push('[');

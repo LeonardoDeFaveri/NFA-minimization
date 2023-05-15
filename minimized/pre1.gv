@@ -2,24 +2,23 @@ digraph {
 	rankdir = LR;
 	size = "30,20";
 	node [shape = point]; "dummy0"
-	node [shape = circle]; "3"
-	"dummy0" -> "3";
-	node [shape = doublecircle]; "5";
+	node [shape = circle]; "5"
+	"dummy0" -> "5";
+	node [shape = circle]; "0";
+	node [shape = circle]; "4";
 	node [shape = circle]; "2";
 	node [shape = circle]; "1";
-	node [shape = circle]; "4";
-	node [shape = circle]; "0";
+	node [shape = doublecircle]; "3";
 	"2" -> "2" [label = "b"];
-	"2" -> "5" [label = "c"];
-	"4" -> "4" [label = "b"];
-	"4" -> "1" [label = "b"];
-	"3" -> "1" [label = "x"];
-	"3" -> "2" [label = "a"];
-	"3" -> "1" [label = "a"];
-	"3" -> "4" [label = "a"];
-	"0" -> "5" [label = "c"];
+	"2" -> "3" [label = "c"];
+	"5" -> "4" [label = "x"];
+	"5" -> "4" [label = "a"];
+	"5" -> "1" [label = "a"];
+	"5" -> "2" [label = "a"];
+	"1" -> "4" [label = "b"];
+	"1" -> "1" [label = "b"];
 	"0" -> "0" [label = "b"];
-	"1" -> "0" [label = "b"];
-	"1" -> "5" [label = "y"];
-	"1" -> "5" [label = "c"];
+	"0" -> "3" [label = "c"];
+	"4" -> "3" [label = "c"];
+	"4" -> "0" [label = "b"];
 }

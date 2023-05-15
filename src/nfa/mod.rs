@@ -33,6 +33,7 @@ where
     final_states: HashSet<S>,
 }
 
+#[allow(dead_code)]
 impl<S, A> Nfa<S, A>
 where
     S: Eq + Hash + Clone + Debug + Display,

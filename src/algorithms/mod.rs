@@ -166,7 +166,7 @@ impl<'a, S, A> Context<'a, S, A> {
 /// of s2.
 pub fn calc_relation<S, A>(
     nfa: &Nfa<S, A>,
-    language: &HashMap<S, Language<S, A>>,
+    right_languages: &HashMap<S, Language<S, A>>,
 ) -> HashSet<(S, S)>
 where
     S: Eq + Hash + Clone + Debug + Display,
@@ -176,7 +176,7 @@ where
     let mut checked = HashSet::new();
 
     for state in nfa.states() {
-        calc_relation_aux(nfa, &language, state, &mut checked, &mut rel);
+        calc_relation_aux(nfa, &right_languages, state, &mut checked, &mut rel);
     }
 
     for final_state in nfa.final_states() {
@@ -194,7 +194,7 @@ where
 /// for which `o` contains `state`.
 fn calc_relation_aux<S, A>(
     nfa: &Nfa<S, A>,
-    language: &HashMap<S, Language<S, A>>,
+    right_languages: &HashMap<S, Language<S, A>>,
     state: &S,
     checked: &mut HashSet<S>,
     rel: &mut HashSet<(S, S)>,
@@ -209,12 +209,12 @@ fn calc_relation_aux<S, A>(
     checked.insert(state.to_owned());
 
     // Initialization
-    let state_lang = language.get(state).unwrap();
+    let state_lang = right_languages.get(state).unwrap();
 
     let mut non_suitable_container = HashSet::new();
     non_suitable_container.insert(state.to_owned());
     for other in nfa.states() {
-        if language.get(other).unwrap().is_empty() {
+        if right_languages.get(other).unwrap().is_empty() {
             non_suitable_container.insert(other.to_owned());
         }
     }
@@ -228,14 +228,14 @@ fn calc_relation_aux<S, A>(
 
             // Checks if there's at least one of other's path that contains path
             let mut found = false;
-            let other_lang = language.get(other).unwrap();
+            let other_lang = right_languages.get(other).unwrap();
             for other_path in other_lang.paths() {
                 if path.transition_symbol != other_path.transition_symbol {
                     continue;
                 }
 
                 //calc_relation_aux(nfa, language, &other_path.reached_state, checked, rel);
-                calc_relation_aux(nfa, language, &path.reached_state, checked, rel);
+                calc_relation_aux(nfa, right_languages, &path.reached_state, checked, rel);
                 if path.reached_state != other_path.reached_state
                     && !rel
                         .contains(&(path.reached_state.clone(), other_path.reached_state.clone()))
@@ -265,7 +265,7 @@ fn calc_relation_aux<S, A>(
             continue;
         }
 
-        let other_lang = language.get(other).unwrap();
+        let other_lang = right_languages.get(other).unwrap();
         let missing: HashSet<&A> = state_lang.loops().difference(other_lang.loops()).collect();
 
         if missing.is_empty() {
@@ -276,7 +276,7 @@ fn calc_relation_aux<S, A>(
     }
 
     for context in waiting_contexts {
-        let other_lang = language.get(context.state).unwrap();
+        let other_lang = right_languages.get(context.state).unwrap();
         let mut to_solve_count = context.missing_loops.len();
 
         for symbol in context.missing_loops {
