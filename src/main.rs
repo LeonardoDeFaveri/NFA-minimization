@@ -1,5 +1,5 @@
 use core::hash::Hash;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
 use std::str::FromStr;
 
@@ -10,148 +10,18 @@ mod algorithms;
 mod nfa;
 
 fn main() {
-    let source = std::fs::read_to_string("nfa.gv").unwrap();
-    let nfa = Nfa::from_str(&source).unwrap();
-
-    let dot_notation = nfa.to_string();
-    let _ = std::fs::write("nfa.gv", dot_notation);
-    let output = std::process::Command::new("dot")
-        .arg("-T")
-        .arg("pdf")
-        .arg("nfa.gv")
-        .output()
-        .expect("Error while writing nfa to pdf");
-    let _ = std::fs::write("nfa.pdf", output.stdout);
-    let rev_nfa = nfa.reverse();
-    let dot_notation = rev_nfa.to_string();
-    let _ = std::fs::write("rev_nfa.gv", dot_notation);
-    let output = std::process::Command::new("dot")
-        .arg("-T")
-        .arg("pdf")
-        .arg("rev_nfa.gv")
-        .output()
-        .expect("Error while writing rev_nfa to pdf");
-    let _ = std::fs::write("rev_nfa.pdf", output.stdout);
-
-    let right_language = calc_right_language(&rev_nfa);
-    let left_language = calc_right_language(&nfa);
-
-    println!("Right language:");
-    print_language(&right_language);
-    println!("Left language:");
-    print_language(&left_language);
-
-    let right = algorithms::calc_relation(&nfa, &right_language);
-    let left = algorithms::calc_relation(&rev_nfa, &left_language);
-
-    let mut right_row = String::new();
-    right_row.push('[');
-    for (source, dest) in &right {
-        right_row.push_str(&format!("({}, {})", source, dest));
-        right_row.push(',');
-    }
-    right_row.pop();
-    right_row.push(']');
-
-    let mut left_row = String::new();
-    left_row.push('[');
-    for (source, dest) in &left {
-        left_row.push_str(&format!("({}, {})", source, dest));
-        left_row.push(',');
-    }
-    left_row.pop();
-    left_row.push(']');
-
-    println!("Right preorder:\n{}", right_row);
-    println!("Left preorder:\n{}", left_row);
-    let table = initialize_rel_table(&nfa, &right, &left);
-    println!("\n(p, q)  \t| Right\t| Left\t| Loop(p)");
-    println!("-----------------------------------------");
-    for (p, q) in table.keys() {
-        let value = table.get(&(p.to_owned(), q.to_owned())).unwrap();
-        println!(
-            "({}, {})  \t| {}\t| {}\t| {}",
-            p, q, value.0, value.1, value.2
-        );
-    }
-
-    let res = algorithms::minimization::right_eq(nfa.states(), &right);
-    let min_right_size = res.len();
-
-    println!("Right equivalence classes");
-    for (i, r) in res.iter().enumerate() {
-        print!("{}: {{", i);
-        for state in r {
-            print!("{}, ", state);
-        }
-        println!("}}");
-    }
-
-    let min_right = algorithms::build_minimized(&nfa, &res);
-    let dot_notation = min_right.to_string();
-    let _ = std::fs::write("minimized/right.gv", dot_notation);
-    let output = std::process::Command::new("dot")
-        .arg("-T")
-        .arg("pdf")
-        .arg("minimized/right.gv")
-        .output()
-        .expect("Error while writing minimized nfa to pdf");
-    let _ = std::fs::write("minimized/right.pdf", output.stdout);
-
-    let res = algorithms::minimization::right_eq(nfa.states(), &left);
-    let min_left_size = res.len();
-
-    println!("Left equivalence classes");
-    for (i, r) in res.iter().enumerate() {
-        print!("{}: {{", i);
-        for state in r {
-            print!("{}, ", state);
-        }
-        println!("}}");
-    }
-
-    let min_left = algorithms::build_minimized(&nfa, &res);
-    let dot_notation = min_left.to_string();
-    let _ = std::fs::write("minimized/left.gv", dot_notation);
-    let output = std::process::Command::new("dot")
-        .arg("-T")
-        .arg("pdf")
-        .arg("minimized/left.gv")
-        .output()
-        .expect("Error while writing minimized nfa to pdf");
-    let _ = std::fs::write("minimized/left.pdf", output.stdout);
-
-    let res = algorithms::minimization::preorder_1(nfa.states(), &table);
-    let min_pre_size = res.len();
-
-    println!("Preorder equivalence classes");
-    for (i, r) in res.iter().enumerate() {
-        print!("{}: {{", i);
-        for state in r {
-            print!("{}, ", state);
-        }
-        println!("}}");
-    }
-
-    let min_pre1 = algorithms::build_minimized(&nfa, &res);
-    let dot_notation = min_pre1.to_string();
-    let _ = std::fs::write("minimized/pre1.gv", dot_notation);
-    let output = std::process::Command::new("dot")
-        .arg("-T")
-        .arg("pdf")
-        .arg("minimized/pre1.gv")
-        .output()
-        .expect("Error while writing minimized nfa to pdf");
-    let _ = std::fs::write("minimized/pre1.pdf", output.stdout);
-
-    println!("| Original | Right Eq | Left Eq | Preorder |");
+    let sizes = test_minimization("nfa.gv");
+    println!("{:-<97}", "");
     println!(
-        "| {} | {} | {} | {} |",
-        nfa.states().len(),
-        min_right_size,
-        min_left_size,
-        min_pre_size
+        "|{:^15}|{:^15}|{:^15}|{:^15}|{:^15}|{:^15}|",
+        "Original", "Right Eq", "Left Eq", "Right-Left Eq", "Left-Right Eq", "Preorder"
     );
+    println!("{:-<97}", "");
+    print!("|");
+    for size in sizes {
+        print!("{:^15}|", size);
+    }
+    println!("\n{:-<97}", "");
 }
 
 fn print_language<S, A>(languages: &HashMap<S, Language<S, A>>)
@@ -182,4 +52,103 @@ where
     }
 
     println!("{output}");
+}
+
+/// Saves an nfa to a `.gv` and `.pdf` file.
+fn save_as<S, A>(nfa: &Nfa<S, A>, file_name: &str)
+where
+    S: Eq + Hash + Clone + Debug + Display,
+    A: Eq + Hash + Clone + Debug + Display,
+{
+    let dot_representation = nfa.to_string();
+    let file_name = file_name.to_string();
+
+    let _ = std::fs::write(format!("{}.gv", &file_name), dot_representation);
+    let output = std::process::Command::new("dot")
+        .arg("-T")
+        .arg("pdf")
+        .arg(format!("{}.gv", &file_name))
+        .output()
+        .expect("Error while writing nfa to pdf");
+    let _ = std::fs::write(format!("{}.pdf", &file_name), output.stdout);
+}
+
+fn print_equivalence_classes<S>(title: &str, classes: &Vec<HashSet<S>>)
+where
+    S: Display,
+{
+    println!("{title}");
+    for (i, r) in classes.iter().enumerate() {
+        print!("{}: {{", i);
+        for state in r {
+            print!("{}, ", state);
+        }
+        println!("}}");
+    }
+}
+
+fn test_minimization(source_file: &str) -> Vec<usize> {
+    let mut sizes = Vec::new();
+
+    let source = std::fs::read_to_string(source_file).unwrap();
+    let nfa = Nfa::from_str(&source).unwrap();
+    sizes.push(nfa.states().len());
+
+    let rev_nfa = nfa.reverse();
+    save_as(&rev_nfa, "rev_nfa");
+
+    let right_language = calc_right_language(&rev_nfa);
+    let left_language = calc_right_language(&nfa);
+
+    let right = algorithms::calc_relation(&nfa, &right_language);
+    let left = algorithms::calc_relation(&rev_nfa, &left_language);
+
+    let table = initialize_rel_table(&nfa, &right, &left);
+    //println!("\n(p, q)  \t| Right\t| Left\t| Loop(p)");
+    //println!("-----------------------------------------");
+    //for (p, q) in table.keys() {
+    //    let value = table.get(&(p.to_owned(), q.to_owned())).unwrap();
+    //    println!(
+    //        "({}, {})  \t| {}\t| {}\t| {}",
+    //        p, q, value.0, value.1, value.2
+    //    );
+    //}
+
+    // Minimization algorithms
+    // Minimize using only right equivalence classes
+    let res = algorithms::minimization::right_eq(nfa.states(), &right);
+    sizes.push(res.len());
+    let min_right = algorithms::build_minimized(&nfa, &res);
+    save_as(&min_right, "minimized/right");
+    //print_equivalence_classes("Right Equivalence classes", &res);
+
+    // Minimize using only left equivalence classes
+    let res = algorithms::minimization::right_eq(nfa.states(), &left);
+    sizes.push(res.len());
+    let min_left = algorithms::build_minimized(&nfa, &res);
+    save_as(&min_left, "minimized/left");
+    //print_equivalence_classes("Left Equivalence classes", &res);
+
+    // Minimize using only rule 3 of merging with preorder equivalence classes
+    let res = algorithms::minimization::preorder_1(nfa.states(), &table);
+    sizes.push(res.len());
+    let min_pre1 = algorithms::build_minimized(&nfa, &res);
+    save_as(&min_pre1, "minimized/pre1");
+    //print_equivalence_classes("Preorder1 Equivalence classes", &res);
+
+    // Minimize using right and then left equivalence classes
+    let res = algorithms::minimization::right_left_eq(nfa.states(), &right, &left);
+    sizes.push(res.len());
+    let min_right_left = algorithms::build_minimized(&nfa, &res);
+    save_as(&min_right_left, "minimized/right_left");
+    //print_equivalence_classes("Right-Left Equivalence classes", &res);
+
+    // Minimize using left and then right equivalence classes
+    let res = algorithms::minimization::right_left_eq(nfa.states(), &left, &right);
+    sizes.push(res.len());
+    let min_left_right = algorithms::build_minimized(&nfa, &res);
+    save_as(&min_left_right, "minimized/left_right");
+    //print_equivalence_classes("Left-Right Equivalence classes", &res);
+
+    sizes
 }
