@@ -92,27 +92,33 @@ fn test_minimization(source_file: &str) -> Vec<usize> {
 
     let source = std::fs::read_to_string(source_file).unwrap();
     let nfa = Nfa::from_str(&source).unwrap();
+    save_as(&nfa, "nfa");
     sizes.push(nfa.states().len());
 
     let rev_nfa = nfa.reverse();
-    save_as(&rev_nfa, "rev_nfa");
+    //save_as(&rev_nfa, "rev_nfa");
 
     let right_language = calc_right_language(&rev_nfa);
     let left_language = calc_right_language(&nfa);
+
+    /*println!("Right Language");
+    print_language(&right_language);
+    println!("Left Language");
+    print_language(&left_language);*/
 
     let right = algorithms::calc_relation(&nfa, &right_language);
     let left = algorithms::calc_relation(&rev_nfa, &left_language);
 
     let table = initialize_rel_table(&nfa, &right, &left);
-    //println!("\n(p, q)  \t| Right\t| Left\t| Loop(p)");
-    //println!("-----------------------------------------");
-    //for (p, q) in table.keys() {
-    //    let value = table.get(&(p.to_owned(), q.to_owned())).unwrap();
-    //    println!(
-    //        "({}, {})  \t| {}\t| {}\t| {}",
-    //        p, q, value.0, value.1, value.2
-    //    );
-    //}
+    println!("\n(p, q)  \t| Right\t| Left\t| Loop(p)");
+    println!("-----------------------------------------");
+    for (p, q) in table.keys() {
+        let value = table.get(&(p.to_owned(), q.to_owned())).unwrap();
+        println!(
+            "({}, {})  \t| {}\t| {}\t| {}",
+            p, q, value.0, value.1, value.2
+        );
+    }
 
     // Minimization algorithms
     // Minimize using only right equivalence classes
@@ -129,13 +135,6 @@ fn test_minimization(source_file: &str) -> Vec<usize> {
     save_as(&min_left, "minimized/left");
     //print_equivalence_classes("Left Equivalence classes", &res);
 
-    // Minimize using only rule 3 of merging with preorder equivalence classes
-    let res = algorithms::minimization::preorder_1(nfa.states(), &table);
-    sizes.push(res.len());
-    let min_pre1 = algorithms::build_minimized(&nfa, &res);
-    save_as(&min_pre1, "minimized/pre1");
-    //print_equivalence_classes("Preorder1 Equivalence classes", &res);
-
     // Minimize using right and then left equivalence classes
     let res = algorithms::minimization::right_left_eq(nfa.states(), &right, &left);
     sizes.push(res.len());
@@ -149,6 +148,13 @@ fn test_minimization(source_file: &str) -> Vec<usize> {
     let min_left_right = algorithms::build_minimized(&nfa, &res);
     save_as(&min_left_right, "minimized/left_right");
     //print_equivalence_classes("Left-Right Equivalence classes", &res);
+
+    // Minimize using only rule 3 of merging with preorder equivalence classes
+    let res = algorithms::minimization::preorder_1(nfa.states(), &table);
+    sizes.push(res.len());
+    let min_pre1 = algorithms::build_minimized(&nfa, &res);
+    save_as(&min_pre1, "minimized/pre1");
+    //print_equivalence_classes("Preorder1 Equivalence classes", &res);
 
     sizes
 }

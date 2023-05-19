@@ -232,7 +232,7 @@ fn calc_relation_aux<S, A>(
                 found = true;
             }
 
-            // Solution to triangualar problem
+            // Solution to triangular problem
             // If I'm reaching a state with a transition on a symbol for which
             // the reached state has a self-loop, the path is included in the loop
             if path.reached_state == *other && other_lang.loops.contains(&path.transition_symbol) {
