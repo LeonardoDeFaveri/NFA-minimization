@@ -62,9 +62,13 @@ where
             continue;
         }
 
-        if left_rel.contains(&(q.clone(), p.clone())) {
+        let rev_pair = (q.clone(), p.clone());
+        if left_rel.contains(&rev_pair)  && !to_forget.contains(&rev_pair) {
             merge_info.link(p.clone(), q.clone());
         }
+        /*if left_rel.contains(&(q.clone(), p.clone())) {
+            merge_info.link(p.clone(), q.clone());
+        }*/
     }
 
     merge_info.sets().collect()
