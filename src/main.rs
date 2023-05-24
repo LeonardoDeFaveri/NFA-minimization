@@ -147,14 +147,14 @@ fn test_minimization(source_file: &str) -> Vec<usize> {
     sizes.push(res.len());
     let min_left_right = algorithms::build_minimized(&nfa, &res);
     save_as(&min_left_right, "minimized/left_right");
-    print_equivalence_classes("Left-Right Equivalence classes", &res);
+    //print_equivalence_classes("Left-Right Equivalence classes", &res);
 
     // Minimize using only rule 3 of merging with preorder equivalence classes
-    let res = algorithms::minimization::preorder_1(nfa.states(), &table);
+    let res = algorithms::minimization::preorders_with_scores(nfa.states(), &table, &right, &left);
     sizes.push(res.len());
     let min_pre1 = algorithms::build_minimized(&nfa, &res);
-    save_as(&min_pre1, "minimized/pre1");
-    //print_equivalence_classes("Preorder1 Equivalence classes", &res);
+    save_as(&min_pre1, "minimized/pre_scores");
+    print_equivalence_classes("Preorder1 Equivalence classes", &res);
 
     sizes
 }
