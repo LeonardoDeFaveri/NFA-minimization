@@ -63,7 +63,7 @@ where
         }
 
         let rev_pair = (q.clone(), p.clone());
-        if left_rel.contains(&rev_pair)  && !to_forget.contains(&rev_pair) {
+        if left_rel.contains(&rev_pair) && !to_forget.contains(&rev_pair) {
             merge_info.link(p.clone(), q.clone());
         }
     }
@@ -84,8 +84,9 @@ where
 {
     let mut merge_info: DisjointHashSet<S> =
         states.into_iter().map(|x| (x.clone(), x.clone())).collect();
-    
-    let mut sorted_pairs: priority_queue::PriorityQueue<(&S, &S), u64> = priority_queue::PriorityQueue::new();
+
+    let mut sorted_pairs: priority_queue::PriorityQueue<(&S, &S), u64> =
+        priority_queue::PriorityQueue::new();
 
     for ((p, q), (right, left, has_loops)) in rel_table {
         let mut score = 0;
@@ -104,7 +105,7 @@ where
 
         if score > 0 {
             //if sorted_pairs.get(&(&q, &p)).is_none() {
-                sorted_pairs.push((&p, &q), score);
+            sorted_pairs.push((&p, &q), score);
             //}
         }
     }
