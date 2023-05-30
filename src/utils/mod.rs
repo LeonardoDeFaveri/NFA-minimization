@@ -78,7 +78,7 @@ pub fn minimize(source_file: &str) -> Sizes {
     }
 }
 
-pub fn print_language<S, A>(languages: &HashMap<S, Language<S, A>>)
+ fn print_language<S, A>(languages: &HashMap<S, Language<S, A>>)
 where
     S: Eq + Hash + Clone + Debug + Display,
     A: Eq + Hash + Clone + Debug + Display,

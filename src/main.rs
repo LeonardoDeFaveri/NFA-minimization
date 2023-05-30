@@ -3,8 +3,10 @@ use tabled::Table;
 
 use crate::utils::{minimize, Sizes};
 
+#[allow(dead_code)]
 mod algorithms;
 mod nfa;
+#[allow(dead_code)]
 mod utils;
 
 fn main() {

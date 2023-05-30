@@ -71,6 +71,14 @@ where
     merge_info.sets().collect()
 }
 
+#[derive(PartialEq, PartialOrd, Eq, Ord)]
+enum Priority {
+    High = 3,
+    Medium = 2,
+    Low = 1,
+    Zero = 0,
+}
+
 /// Scores state pairs and merge states using pairs in a decresing order of
 /// scores.
 pub fn preorders_with_scores<S>(
@@ -85,25 +93,25 @@ where
     let mut merge_info: DisjointHashSet<S> =
         states.into_iter().map(|x| (x.clone(), x.clone())).collect();
 
-    let mut sorted_pairs: priority_queue::PriorityQueue<(&S, &S), u64> =
+    let mut sorted_pairs: priority_queue::PriorityQueue<(&S, &S), Priority> =
         priority_queue::PriorityQueue::new();
 
     for ((p, q), (right, left, has_loops)) in rel_table {
-        let mut score = 0;
+        let mut score = Priority::Zero;
         let rev_pair = (q.clone(), p.clone());
         if let Some((rev_right, rev_left, _)) = rel_table.get(&rev_pair) {
             if *right && *rev_right {
-                score += 5;
+                score = Priority::Medium;
             }
             if *left && *rev_left {
-                score += 5;
+                score = Priority::Low;
             }
         }
         if *right && *left && !*has_loops {
-            score += 10;
+            score = Priority::High;
         }
 
-        if score > 0 {
+        if score != Priority::Zero {
             //if sorted_pairs.get(&(&q, &p)).is_none() {
             sorted_pairs.push((&p, &q), score);
             //}
@@ -113,7 +121,7 @@ where
     let mut to_forget_right: HashSet<(S, S)> = HashSet::new();
     let mut to_forget_left: HashSet<(S, S)> = HashSet::new();
 
-    for ((p, q), _) in sorted_pairs {
+    for ((p, q), priority) in sorted_pairs {
         let pair = (p.clone(), q.clone());
         let rev_pair = (q.clone(), p.clone());
 
@@ -121,26 +129,27 @@ where
             continue;
         }
 
-        let (right, left, has_loops) = rel_table.get(&pair).unwrap();
-        if *right && *left && !*has_loops {
-            merge_info.link(p.clone(), q.clone());
-        } else {
-            let (rev_right, rev_left, _) = rel_table.get(&rev_pair).unwrap();
-            if *right && *rev_right && !to_forget_right.contains(&rev_pair) {
+        match priority {
+            Priority::High => {
+                merge_info.link(p.clone(), q.clone());
+            },
+            Priority::Medium if !to_forget_right.contains(&rev_pair) => {
                 merge_info.link(p.clone(), q.clone());
                 for (a, s) in left_rel {
                     if a == q && !left_rel.contains(&(p.clone(), s.clone())) {
                         to_forget_left.insert((q.clone(), s.clone()));
                     }
                 }
-            } else if *left && *rev_left && !to_forget_left.contains(&rev_pair) {
+            },
+            Priority::Low if !to_forget_left.contains(&rev_pair) => {
                 merge_info.link(p.clone(), q.clone());
                 for (a, s) in right_rel {
                     if a == q && !right_rel.contains(&(p.clone(), s.clone())) {
                         to_forget_right.insert((q.clone(), s.clone()));
                     }
                 }
-            }
+            },
+            _ => {}
         }
     }
 
