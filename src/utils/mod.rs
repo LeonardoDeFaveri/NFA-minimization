@@ -5,32 +5,45 @@ use std::{
     str::FromStr,
 };
 
-use tabled::Tabled;
-
 use crate::{
     algorithms::{self, calc_right_language, initialize_rel_table, Language},
     nfa::Nfa,
 };
 
-#[derive(Tabled)]
 pub struct Sizes {
-    pub original: f64,
-    pub right_eq: f64,
-    pub left_eq: f64,
-    pub right_left_eq: f64,
-    pub left_right_eq: f64,
-    pub scores: f64,
+    pub original: usize,
+    pub right_eq: usize,
+    pub left_eq: usize,
+    pub right_left_eq: usize,
+    pub left_right_eq: usize,
+    pub reason: usize,
+    pub sccs: usize,
+}
+
+impl Sizes {
+    pub fn as_vec(&self) -> Vec<usize> {
+        vec![
+            self.original,
+            self.right_eq,
+            self.left_eq,
+            self.right_left_eq,
+            self.left_right_eq,
+            self.reason,
+            self.sccs,
+        ]
+    }
 }
 
 impl Default for Sizes {
     fn default() -> Self {
         Sizes {
-            original: 0.0,
-            right_eq: 0.0,
-            left_eq: 0.0,
-            right_left_eq: 0.0,
-            left_right_eq: 0.0,
-            scores: 0.0,
+            original: 0,
+            right_eq: 0,
+            left_eq: 0,
+            right_left_eq: 0,
+            left_right_eq: 0,
+            reason: 0,
+            sccs: 0,
         }
     }
 }
@@ -64,21 +77,27 @@ pub fn minimize(source_file: &str) -> Sizes {
     let res = algorithms::minimization::right_left_eq(nfa.states(), &left, &right);
     let left_right_eq = res.len();
 
-    // Minimize using only rule 3 of merging with preorder equivalence classes
-    let res = algorithms::minimization::preorders_with_scores(nfa.states(), &table, &right, &left);
-    let scores = res.len();
+    // Minimize using merging rules in order: iii, i, ii
+    let res =
+        algorithms::minimization::preorders_with_priority(nfa.states(), &table, &right, &left);
+    let reason = res.len();
+
+    // Minimize using strongly connected components
+    let res = algorithms::minimization::preorders_with_sccs(nfa.states(), &table, &right, &left);
+    let sccs = res.len();
 
     Sizes {
-        original: original as f64,
-        right_eq: right_eq as f64,
-        left_eq: left_eq as f64,
-        right_left_eq: right_left_eq as f64,
-        left_right_eq: left_right_eq as f64,
-        scores: scores as f64,
+        original,
+        right_eq,
+        left_eq,
+        right_left_eq,
+        left_right_eq,
+        reason,
+        sccs,
     }
 }
 
- fn print_language<S, A>(languages: &HashMap<S, Language<S, A>>)
+fn print_language<S, A>(languages: &HashMap<S, Language<S, A>>)
 where
     S: Eq + Hash + Clone + Debug + Display,
     A: Eq + Hash + Clone + Debug + Display,
@@ -204,7 +223,8 @@ pub fn test_minimization(source_file: &str) -> Vec<usize> {
     //print_equivalence_classes("Left-Right Equivalence classes", &res);
 
     // Minimize using only rule 3 of merging with preorder equivalence classes
-    let res = algorithms::minimization::preorders_with_scores(nfa.states(), &table, &right, &left);
+    let res =
+        algorithms::minimization::preorders_with_priority(nfa.states(), &table, &right, &left);
     sizes.push(res.len());
     let min_pre1 = algorithms::build_minimized(&nfa, &res);
     save_as(&min_pre1, "minimized/pre_scores");

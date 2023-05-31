@@ -1,7 +1,6 @@
+use cli_table::{format::Justify, print_stdout, Cell, Style, Table};
 use std::io::Write;
-use tabled::Table;
-
-use crate::utils::{minimize, Sizes};
+use utils::minimize;
 
 #[allow(dead_code)]
 mod algorithms;
@@ -38,29 +37,78 @@ fn main() {
         }
     };
 
-    let mut avg_size_red = Sizes::default();
-    let mut sizes: Vec<Sizes> = Vec::new();
+    let mut sizes = vec![];
     let tests_count = tests.len();
     for (i, path) in tests.iter().enumerate() {
-        print!("\rAnalyzing test: {:0>2}/{}", i + 1, tests_count);
+        print!("\rAnalyzing test: {:0>2}/{:0>2}", i + 1, tests_count);
         let _ = std::io::stdout().flush();
-        let i_sizes = minimize(path);
-        avg_size_red.right_eq += (i_sizes.original - i_sizes.right_eq) / i_sizes.original;
-        avg_size_red.left_eq += (i_sizes.original - i_sizes.left_eq) / i_sizes.original;
-        avg_size_red.right_left_eq += (i_sizes.original - i_sizes.right_left_eq) / i_sizes.original;
-        avg_size_red.left_right_eq += (i_sizes.original - i_sizes.left_right_eq) / i_sizes.original;
-        avg_size_red.scores += (i_sizes.original - i_sizes.scores) / i_sizes.original;
-        sizes.push(i_sizes);
+        sizes.push(minimize(path).as_vec());
     }
 
-    avg_size_red.right_eq = (avg_size_red.right_eq / tests_count as f64) * 100.0;
-    avg_size_red.left_eq = (avg_size_red.left_eq / tests_count as f64) * 100.0;
-    avg_size_red.right_left_eq = (avg_size_red.right_left_eq / tests_count as f64) * 100.0;
-    avg_size_red.left_right_eq = (avg_size_red.left_right_eq / tests_count as f64) * 100.0;
-    avg_size_red.scores = (avg_size_red.scores / tests_count as f64) * 100.0;
-    sizes.push(avg_size_red);
+    println!("\nResults:");
+    print_results(
+        &sizes,
+        vec![
+            "#",
+            "Original",
+            "Right Eq",
+            "Left Eq",
+            "Right-Left Eq",
+            "Left-Right Eq",
+            "Reason priority",
+            "SCCs",
+        ],
+    );
+}
 
-    let output_table = Table::new(sizes).to_string();
-    println!("\nResults");
-    println!("{}", output_table);
+fn print_results(sizes: &Vec<Vec<usize>>, titles: Vec<&str>) {
+    let sizes_count = sizes.len();
+    if sizes_count == 0 {
+        return;
+    }
+
+    // Calculate average reduction in size for each method
+    // 1. Sums up all reductions
+    let mut avg_red = vec![0.0; sizes[0].len() - 1];
+
+    for sample_sizes in sizes {
+        let original = sample_sizes[0];
+        for (i, size) in sample_sizes[1..].iter().enumerate() {
+            avg_red[i] += (original - size) as f64 / original as f64;
+        }
+    }
+
+    // 2. Calculates the average
+    for red in avg_red.as_mut_slice() {
+        *red = *red / sizes_count as f64 * 100.0;
+    }
+
+    let mut table_rows = vec![];
+    // Main data rows
+    for (i, sample_sizes) in sizes.iter().enumerate() {
+        let mut row = vec![(i + 1).cell().justify(Justify::Center)];
+        for size in sample_sizes {
+            row.push(size.cell().justify(Justify::Center));
+        }
+        table_rows.push(row);
+    }
+    // Summary row
+    let mut summary_row = vec![
+        "Red".cell().justify(Justify::Center).bold(true),
+        "-".cell().justify(Justify::Center).bold(true),
+    ];
+    for red in avg_red {
+        let red_str = format!("{:.3}%", red);
+        summary_row.push(red_str.cell().justify(Justify::Center).bold(true));
+    }
+    table_rows.push(summary_row);
+
+    // Prepares titles
+    let mut title_row = vec![];
+    for title in titles {
+        title_row.push(title.cell().justify(Justify::Center).bold(true));
+    }
+
+    let table = table_rows.table().title(title_row);
+    let _ = print_stdout(table);
 }
