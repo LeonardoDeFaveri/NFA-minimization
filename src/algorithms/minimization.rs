@@ -89,7 +89,7 @@ pub fn preorders_with_priority<S>(
     left_rel: &HashSet<(S, S)>,
 ) -> Vec<HashSet<S>>
 where
-    S: Eq + Hash + Clone + Display,
+    S: Eq + Hash + Clone,
 {
     let mut merge_info: DisjointHashSet<S> =
         states.into_iter().map(|x| (x.clone(), x.clone())).collect();
@@ -113,15 +113,14 @@ where
         }
 
         if reason != MergeReason::None {
-            //if sorted_pairs.get(&(&q, &p)).is_none() {
             sorted_pairs.push((p.clone(), q.clone()), reason);
-            //}
         }
     }
 
     let mut to_forget_right: HashSet<(S, S)> = HashSet::new();
     let mut to_forget_left: HashSet<(S, S)> = HashSet::new();
 
+    //let mut i = 1;
     for ((p, q), reason) in sorted_pairs.into_sorted_iter() {
         let pair = (p.clone(), q.clone());
         let rev_pair = (q.clone(), p.clone());
@@ -133,6 +132,10 @@ where
         match reason {
             MergeReason::Preorder => {
                 merge_info.link(p.clone(), q.clone());
+                //println!("Merged ({p},{q})");
+                //let min = build_minimized(nfa, &merge_info.clone().sets().collect::<Vec<_>>());
+                //print_equivalence_classes(&format!("Merge: {i}"), &merge_info.clone().sets().collect::<Vec<_>>());
+                //save_as(&min, &format!("dump/{i}"));
             }
             MergeReason::RightEq if !to_forget_right.contains(&rev_pair) => {
                 merge_info.link(p.clone(), q.clone());
@@ -141,6 +144,10 @@ where
                         to_forget_left.insert((q.clone(), s.clone()));
                     }
                 }
+                //println!("Merged ({p},{q})");
+                //let min = build_minimized(nfa, &merge_info.clone().sets().collect::<Vec<_>>());
+                //print_equivalence_classes(&format!("Merge: {i}"), &merge_info.clone().sets().collect::<Vec<_>>());
+                //save_as(&min, &format!("dump/{i}"));
             }
             MergeReason::LeftEq if !to_forget_left.contains(&rev_pair) => {
                 merge_info.link(p.clone(), q.clone());
@@ -149,9 +156,17 @@ where
                         to_forget_right.insert((q.clone(), s.clone()));
                     }
                 }
+                //println!("Merged ({p},{q})");
+                //let min = build_minimized(nfa, &merge_info.clone().sets().collect::<Vec<_>>());
+                //print_equivalence_classes(&format!("Merge: {i}"), &merge_info.clone().sets().collect::<Vec<_>>());
+                //save_as(&min, &format!("dump/{i}"));
             }
             _ => {}
         }
+
+        /*if i == 1 {
+            break;
+        }*/
     }
 
     merge_info.sets().collect()
@@ -188,14 +203,79 @@ where
 
     let sccs = petgraph::algo::kosaraju_scc(&graph);
 
-    let mut merge_info = vec![];
+    let mut merge_info: DisjointHashSet<S> =
+        states.into_iter().map(|x| (x.clone(), x.clone())).collect();
+
+    /*let mut to_forget_right: HashSet<(S, S)> = HashSet::new();
+    let mut to_forget_left: HashSet<(S, S)> = HashSet::new();
+    //let mut merge_info = vec![];
     for scc in &sccs {
-        let mut set = HashSet::new();
+        if scc.len() == 1 {
+            continue;
+        }
+
+        for p_index in scc {
+            let p = graph[*p_index].clone();
+            for q_index in scc {
+                if p_index == q_index {
+                    continue;
+                }
+                let q = graph[*q_index].clone();
+
+                let pair = (p.clone(), q.clone());
+                if !rel_table.contains_key(&pair)
+                    || to_forget_right.contains(&pair)
+                    || to_forget_left.contains(&pair)
+                {
+                    continue;
+                }
+
+                let (p_right, p_left, p_loop) = rel_table.get(&pair).unwrap();
+                if *p_right && *p_left && !*p_loop {
+                    println!("USED LINK({}, {}) FOR (3.A)", &p, &q);
+                    merge_info.link(p.clone(), q.clone());
+                } else {
+                    let rev_pair = (q.clone(), p.clone());
+                    if !rel_table.contains_key(&rev_pair) {
+                        continue;
+                    }
+                    let (r_right, r_left, r_loop) = rel_table.get(&pair).unwrap();
+                    if *r_right
+                        && *r_left
+                        && !*r_loop
+                        && !to_forget_left.contains(&rev_pair)
+                        && !to_forget_right.contains(&rev_pair)
+                    {
+                        merge_info.link(q.clone(), p.clone());
+                        println!("USED LINK({}, {}) FOR (3.B)", &p, &q);
+                    } else if *p_right && *r_right && !to_forget_right.contains(&rev_pair) {
+                        merge_info.link(p.clone(), q.clone());
+                        println!("USED LINK({}, {}) FOR (1)", &p, &q);
+                        for (a, s) in left_rel {
+                            if *a == q && !left_rel.contains(&(p.clone(), s.clone())) {
+                                to_forget_left.insert((q.clone(), s.clone()));
+                            }
+                        }
+                    } else if *p_left && *r_left && !to_forget_left.contains(&rev_pair) {
+                        merge_info.link(p.clone(), q.clone());
+                        println!("USED LINK({}, {}) FOR (2)", &p, &q);
+                        for (a, s) in right_rel {
+                            if *a == q && !right_rel.contains(&(p.clone(), s.clone())) {
+                                to_forget_right.insert((q.clone(), s.clone()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /*let mut set = HashSet::new();
         for node_index in scc {
             set.insert(graph[*node_index].clone());
         }
-        merge_info.push(set);
+        merge_info.push(set);*/
     }
 
-    merge_info
+    //merge_info*/
+    merge_info.sets().collect()
 }

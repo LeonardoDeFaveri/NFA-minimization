@@ -99,6 +99,10 @@ where
             }
         }
 
+        if self.paths.len() == 0 {
+            f.write_str(&loop_str)?;
+        }
+
         Ok(())
     }
 }
@@ -143,6 +147,17 @@ where
             }
         }
     }
+
+    /*// Each final state in `nfa` can accept as right language its self-loop
+    // by its own
+    for state in rev_nfa.initial_states() {
+        let state_lang = languages.get_mut(state).unwrap();
+        let loop_symbols = state_lang.loops().to_owned();
+        for symbol in loop_symbols {
+            let path = Path::new(symbol, state.to_owned());
+            state_lang.push_path(path);
+        }
+    }*/
 
     languages
 }

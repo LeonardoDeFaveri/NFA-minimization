@@ -94,7 +94,7 @@ fn print_results(sizes: &Vec<Vec<usize>>, titles: Vec<&str>) {
     }
     // Summary row
     let mut summary_row = vec![
-        "Red".cell().justify(Justify::Center).bold(true),
+        "Res".cell().justify(Justify::Center).bold(true),
         "-".cell().justify(Justify::Center).bold(true),
     ];
     for red in avg_red {

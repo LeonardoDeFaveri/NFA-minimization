@@ -105,23 +105,7 @@ where
     let mut output = String::new();
 
     for (state, language) in languages {
-        output.push_str(&format!("{state}: "));
-        let mut loop_str =
-            String::from_iter(language.loops().iter().map(|symbol| format!("{symbol}+")));
-
-        if !loop_str.is_empty() {
-            loop_str.pop();
-            loop_str = format!("({})*", loop_str);
-        }
-
-        for path in language.paths() {
-            output.push_str(&format!(
-                "{}{}L{}+",
-                loop_str, path.transition_symbol, path.reached_state
-            ));
-        }
-        output.pop();
-        output.push('\n');
+        output.push_str(&format!("{state}: {language}\n"));
     }
 
     println!("{output}");
@@ -174,10 +158,10 @@ pub fn test_minimization(source_file: &str) -> Vec<usize> {
     let right_language = calc_right_language(&rev_nfa);
     let left_language = calc_right_language(&nfa);
 
-    /*println!("Right Language");
+    println!("Right Language");
     print_language(&right_language);
     println!("Left Language");
-    print_language(&left_language);*/
+    print_language(&left_language);
 
     let right = algorithms::calc_relation(&nfa, &right_language);
     let left = algorithms::calc_relation(&rev_nfa, &left_language);
@@ -227,7 +211,7 @@ pub fn test_minimization(source_file: &str) -> Vec<usize> {
         algorithms::minimization::preorders_with_priority(nfa.states(), &table, &right, &left);
     sizes.push(res.len());
     let min_pre1 = algorithms::build_minimized(&nfa, &res);
-    save_as(&min_pre1, "minimized/pre_scores");
+    save_as(&min_pre1, "minimized/pre_priority");
     //print_equivalence_classes("Preorder1 Equivalence classes", &res);
 
     sizes
