@@ -4,6 +4,25 @@ import math
 
 import io, os, sys, time
 
+grammars = {
+    'g_mine': [
+        
+    ],
+    'g_finite_base': [
+        "Tr -> Tr + Tc | Tc",
+        "Tc -> Tc Ts |  Ts",
+        "Ts ->  Ti | ( Tr ) "
+    ],
+    'g_regular_wredund': [
+        "Tr -> Trs | Tf ",
+        "Trs -> Trs + Tf | Tf + Tf",
+        "Tf -> Tc | Te | Ti",
+        "Tc -> Ts Ts | Tf Te",
+        "Ts -> Te | Ti | ( Trs ) ",
+        "Te -> ( Trs ) * | ( Tc ) * | Ti *"
+    ],
+}
+
 """
 Generates a random NFA. It is first generates a regular expression
 and then an NFA is derived using the position automaton construction
@@ -25,31 +44,31 @@ def generate_example(alphabet_size: int, word_size: int, op_density = 0.2, cut_l
         mul = 1 + math.floor(i / 25)
         alphabet.append(a)
 
-    generator = REStringRGenerator(alphabet, word_size, None, None, reGrammar['g_regular_wredund'])
+    generator = REStringRGenerator(alphabet, word_size, grammars['g_regular_wredund'], None, None)
     
     while True:
         regex = generator.generate()
-
+    
         op_count = 0
         for sym in regex:
             if sym == '+' or sym == '|' or sym == '*' or sym == '(' or sym == ')':
                 op_count += 1
-
+    
         if op_count / word_size < op_density:
             continue
-
+    
         regExp: reex.RegExp = reex.str2regexp(regex)
         nfa = regExp.nfaPosition()
-
+    
         if len(nfa.States) < cut_lower_than:
             continue
         return nfa
 
 # Generates:
-# 15 small nfas: 25, 100
-# 15 medium nfas: 50, 100
-# 15 large nfas: 100, 100
-# 15 huge nfas: 1000, 100
+# 15 small nfas: 10, 25
+# 15 medium nfas: 15, 50
+# 15 large nfas: 20, 100
+# 15 huge nfas: 25, 500
 
 tests_folder = 'tests'
 if len(sys.argv) > 1:
@@ -64,7 +83,7 @@ print("Generaing small nfas:\t 00/15", end = '')
 sys.stdout.flush()
 for i in range(1, 15 + 1):
     nfa = generate_example(10, 25, 0.4)
-    out = io.open(f'tests/small-{i}.gv', 'w')
+    out = io.open(f'{tests_folder}/small-{i}.gv', 'w')
     out.write(nfa.dotFormat())
     out.close()
     print(f"\b\b\b\b\b{i:0>2}/15", end = '')
@@ -74,8 +93,8 @@ print()
 print("Generaing medium nfas:\t 00/15", end = '')
 sys.stdout.flush()
 for i in range(1, 15 + 1):
-    nfa = generate_example(10, 50, 0.35, 10)
-    out = io.open(f'tests/medium-{i}.gv', 'w')
+    nfa = generate_example(15, 50, 0.35, 10)
+    out = io.open(f'{tests_folder}/medium-{i}.gv', 'w')
     out.write(nfa.dotFormat())
     out.close()
     print(f"\b\b\b\b\b{i:0>2}/15", end = '')
@@ -85,8 +104,8 @@ print()
 print("Generaing large nfas:\t 00/15", end = '')
 sys.stdout.flush()
 for i in range(1, 15 + 1):
-    nfa = generate_example(10, 100, 0.25, 25)
-    out = io.open(f'tests/large-{i}.gv', 'w')
+    nfa = generate_example(20, 100, 0.25, 25)
+    out = io.open(f'{tests_folder}/large-{i}.gv', 'w')
     out.write(nfa.dotFormat())
     out.close()
     print(f"\b\b\b\b\b{i:0>2}/15", end = '')
@@ -96,8 +115,8 @@ print()
 print("Generaing huge nfas:\t 00/15", end = '')
 sys.stdout.flush()
 for i in range(1, 15 + 1):
-    nfa = generate_example(10, 500, 0.1, 40)
-    out = io.open(f'tests/huge-{i}.gv', 'w')
+    nfa = generate_example(25, 500, 0.1, 40)
+    out = io.open(f'{tests_folder}/huge-{i}.gv', 'w')
     out.write(nfa.dotFormat())
     out.close()
     print(f"\b\b\b\b\b{i:0>2}/15", end = '')

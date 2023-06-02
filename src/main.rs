@@ -45,6 +45,8 @@ fn main() {
         sizes.push(minimize(path).as_vec());
     }
 
+    sizes.sort_by(|a, b| a[0].cmp(&b[0]));
+
     println!("\nResults:");
     print_results(
         &sizes,

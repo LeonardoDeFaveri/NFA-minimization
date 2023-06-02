@@ -73,11 +73,20 @@ where
     merge_info.sets().collect()
 }
 
+/*  Priority (dec)              | Reduction
+    Preorder, RightEq, LeftEq   | 12.430%
+    Preorder, LeftEq, RightEq   | 12.534%   *
+    RightEq, LeftEq, Preorder   | 12.278%
+    RightEq, Preorder, LeftEq   | 12.430%
+    LeftEq, Preorder, RightEq   | 12.534%   *
+    LeftEq, RightEq, Preorder   | 12.534%   *
+
+*/
 #[derive(PartialEq, PartialOrd, Eq, Ord)]
 enum MergeReason {
-    Preorder = 3,
-    RightEq = 2,
-    LeftEq = 1,
+    Preorder = 2,
+    RightEq = 1,
+    LeftEq = 3,
     None = 0,
 }
 
@@ -89,7 +98,7 @@ pub fn preorders_with_priority<S>(
     left_rel: &HashSet<(S, S)>,
 ) -> Vec<HashSet<S>>
 where
-    S: Eq + Hash + Clone,
+    S: Eq + Hash + Clone + Display,
 {
     let mut merge_info: DisjointHashSet<S> =
         states.into_iter().map(|x| (x.clone(), x.clone())).collect();
@@ -132,7 +141,7 @@ where
         match reason {
             MergeReason::Preorder => {
                 merge_info.link(p.clone(), q.clone());
-                //println!("Merged ({p},{q})");
+                //println!("Merged ({p},{q}) 3");
                 //let min = build_minimized(nfa, &merge_info.clone().sets().collect::<Vec<_>>());
                 //print_equivalence_classes(&format!("Merge: {i}"), &merge_info.clone().sets().collect::<Vec<_>>());
                 //save_as(&min, &format!("dump/{i}"));
@@ -144,7 +153,7 @@ where
                         to_forget_left.insert((q.clone(), s.clone()));
                     }
                 }
-                //println!("Merged ({p},{q})");
+                //println!("Merged ({p},{q}) 1");
                 //let min = build_minimized(nfa, &merge_info.clone().sets().collect::<Vec<_>>());
                 //print_equivalence_classes(&format!("Merge: {i}"), &merge_info.clone().sets().collect::<Vec<_>>());
                 //save_as(&min, &format!("dump/{i}"));
@@ -156,7 +165,7 @@ where
                         to_forget_right.insert((q.clone(), s.clone()));
                     }
                 }
-                //println!("Merged ({p},{q})");
+                //println!("Merged ({p},{q}) 2");
                 //let min = build_minimized(nfa, &merge_info.clone().sets().collect::<Vec<_>>());
                 //print_equivalence_classes(&format!("Merge: {i}"), &merge_info.clone().sets().collect::<Vec<_>>());
                 //save_as(&min, &format!("dump/{i}"));
@@ -202,9 +211,17 @@ where
     }
 
     let sccs = petgraph::algo::kosaraju_scc(&graph);
+    let mut merge_info = Vec::new();
+    for scc in &sccs {
+        let mut set = HashSet::new();
+        for node_index in scc {
+            set.insert(graph[*node_index].clone());
+        }
+        merge_info.push(set);
+    }
 
-    let mut merge_info: DisjointHashSet<S> =
-        states.into_iter().map(|x| (x.clone(), x.clone())).collect();
+    //let mut merge_info: DisjointHashSet<S> =
+    //    states.into_iter().map(|x| (x.clone(), x.clone())).collect();
 
     /*let mut to_forget_right: HashSet<(S, S)> = HashSet::new();
     let mut to_forget_left: HashSet<(S, S)> = HashSet::new();
@@ -269,13 +286,13 @@ where
             }
         }
 
-        /*let mut set = HashSet::new();
+        let mut set = HashSet::new();
         for node_index in scc {
             set.insert(graph[*node_index].clone());
         }
-        merge_info.push(set);*/
-    }
+        merge_info.push(set);
+    }*/
 
-    //merge_info*/
-    merge_info.sets().collect()
+    merge_info
+    //merge_info.sets().collect()
 }
