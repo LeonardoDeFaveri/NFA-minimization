@@ -1,0 +1,41 @@
+digraph {
+	rankdir = LR;
+	size = "30,20";
+	node [shape = point]; "dummy0"
+	node [shape = doublecircle]; "0"
+	"dummy0" -> "0";
+	node [shape = doublecircle]; "1";
+	node [shape = circle]; "2";
+	node [shape = doublecircle]; "3";
+	node [shape = doublecircle]; "4";
+	node [shape = circle]; "5";
+	node [shape = doublecircle]; "6";
+	node [shape = circle]; "7";
+	node [shape = doublecircle]; "8";
+	node [shape = circle]; "9";
+	node [shape = circle]; "10";
+	node [shape = doublecircle]; "11";
+	node [shape = doublecircle]; "12";
+	"0" -> "1" [label = "a"];
+	"0" -> "2" [label = "b"];
+	"0" -> "3" [label = "d"];
+	"0" -> "4" [label = "i"];
+	"2" -> "5" [label = "i"];
+	"3" -> "3" [label = "d"];
+	"5" -> "6" [label = "c"];
+	"6" -> "2" [label = "b"];
+	"6" -> "3" [label = "d"];
+	"6" -> "7" [label = "b"];
+	"6" -> "8" [label = "i"];
+	"6" -> "9" [label = "b"];
+	"7" -> "12" [label = "j"];
+	"9" -> "10" [label = "f"];
+	"10" -> "11" [label = "i"];
+	"11" -> "2" [label = "b"];
+	"11" -> "3" [label = "d"];
+	"12" -> "2" [label = "b"];
+	"12" -> "3" [label = "d"];
+	"8" -> "2" [label = "b"];
+	"8" -> "8" [label = "i"];
+	"8" -> "3" [label = "d"];
+}
