@@ -83,7 +83,7 @@ pub fn minimize(source_file: &str) -> Sizes {
     let reason = res.len();
 
     // Minimize using strongly connected components
-    let res = algorithms::minimization::preorders_with_sccs(nfa.states(), &table, &right, &left);
+    let res = algorithms::minimization::preorders_with_sccs(nfa.states(), &table);
     let sccs = res.len();
 
     Sizes {
