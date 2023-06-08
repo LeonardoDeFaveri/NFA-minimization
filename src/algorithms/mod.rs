@@ -180,14 +180,6 @@ where
         calc_relation_aux(nfa, &right_languages, state, &mut checked, &mut rel);
     }
 
-    /*for final_state in nfa.final_states() {
-        for state in nfa.states() {
-            if !nfa.is_final(state).unwrap() {
-                rel.remove(&(final_state.to_owned(), state.to_owned()));
-            }
-        }
-    }*/
-
     rel
 }
 
@@ -220,6 +212,7 @@ fn calc_relation_aux<S, A>(
             non_suitable_container.insert(other.to_owned());
         }
 
+        // Final and non-final states can't be in a preorder relantionship
         if is_final != nfa.is_final(other).unwrap() {
             non_suitable_container.insert(other.to_owned());
         }
