@@ -40,7 +40,12 @@ fn main() {
     let mut sizes = vec![];
     let tests_count = tests.len();
     for (i, path) in tests.iter().enumerate() {
-        print!("\rAnalyzing test: {:0>2}/{:0>2}", i + 1, tests_count);
+        print!(
+            "\rAnalyzing test: {:0>2}/{:0>2} [{:^20}]",
+            i + 1,
+            tests_count,
+            path
+        );
         let _ = std::io::stdout().flush();
         sizes.push(minimize(path).as_vec());
     }
