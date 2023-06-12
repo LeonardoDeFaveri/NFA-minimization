@@ -1,8 +1,11 @@
 use nfa::Nfa;
-use std::{io::Write, str::FromStr};
-use utils::{minimize, save_as};
+use std::str::FromStr;
+use utils::save_as;
 
-use crate::{algorithms::{calc_right_language, initialize_rel_table}, utils::{print_language, print_equivalence_classes}};
+use crate::{
+    algorithms::{calc_right_language, initialize_rel_table},
+    utils::{print_equivalence_classes, print_language},
+};
 
 #[allow(dead_code)]
 mod algorithms;
@@ -11,8 +14,8 @@ mod nfa;
 mod utils;
 
 fn main() {
-    let source_file = "mini_tests/nfa.gv";
-    //let source_file = "tests/small-11.gv";
+    //let source_file = "tests/medium-9.gv";
+    let source_file = "mini_tests/nfa3.gv";
     let source = std::fs::read_to_string(source_file).unwrap();
     let nfa = Nfa::from_str(&source).unwrap();
 
@@ -41,9 +44,14 @@ fn main() {
         );
     }
 
-    let res =
+    /*let res =
         algorithms::minimization::preorders_with_priority(nfa.states(), &table, &right, &left);
     let min_pre1 = algorithms::build_minimized(&nfa, &res);
     save_as(&min_pre1, "minimized/pre_priority");
-    print_equivalence_classes("Preorder1 Equivalence classes", &res);
+    print_equivalence_classes("Preorder1 Equivalence classes", &res);*/
+
+    let res = algorithms::minimization::preorders_with_sccs(nfa.states(), &table,);
+    print_equivalence_classes("SCCs", &res);
+    let min = algorithms::build_minimized(&nfa, &res);
+    save_as(&min, "minimized/sccs");
 }
