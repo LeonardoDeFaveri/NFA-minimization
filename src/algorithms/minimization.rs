@@ -1,8 +1,9 @@
 use disjoint_hash_set::DisjointHashSet;
 use petgraph::{
     dot::{Config, Dot},
+    prelude::DiGraphMap,
     stable_graph::{NodeIndex, StableDiGraph},
-    Direction, prelude::DiGraphMap,
+    Direction,
 };
 use std::{
     collections::{HashMap, HashSet},
@@ -349,6 +350,7 @@ where
         .collect()
 }*/
 
+use union_find_rs::prelude::*;
 type PlaceHolder = usize;
 
 pub fn preorders_with_sccs<S>(
@@ -358,27 +360,35 @@ pub fn preorders_with_sccs<S>(
 where
     S: Eq + Hash + Clone + Display,
 {
+    // Maps each original state to its placeholder
     let mut all_ph: HashMap<&S, PlaceHolder> = HashMap::new();
-    let mut all_states: HashMap<PlaceHolder, &S> = HashMap::new();
+    // [Used only for merging states using rule 3]
+    // Maps each placeholder to the placeholder of the state that containes it
+    let mut containers: DisjointSets<PlaceHolder> = DisjointSets::new();
 
     // Dependency graphs for right and left preorders
-    let mut graph_right: DiGraphMap<usize, ()> = DiGraphMap::new();
-    let mut graph_left: DiGraphMap<usize, ()> = DiGraphMap::new();
+    let mut graph_right: DiGraphMap<PlaceHolder, ()> = DiGraphMap::new();
+    let mut graph_left: DiGraphMap<PlaceHolder, ()> = DiGraphMap::new();
 
+    // Used to keep track of nfa states.
     let mut merge_info: HashMap<PlaceHolder, HashSet<S>> = HashMap::new();
 
+    // Assigns a placeholder to each state
     for (ph, state) in states.iter().enumerate() {
         graph_right.add_node(ph);
         graph_left.add_node(ph);
         all_ph.insert(state, ph);
-        all_states.insert(ph, state);
+        containers.make_set(ph).unwrap();
 
         let mut set = HashSet::new();
         set.insert(state.clone());
         merge_info.insert(ph, set);
     }
 
-    for ((p, q), (right, left, _)) in rel_table {
+    //let mut intersection = Vec::new();
+
+    // Adds edges to dependency graphs
+    for ((p, q), (right, left, has_loop)) in rel_table {
         let p_ph = all_ph[p];
         let q_ph = all_ph[q];
 
@@ -388,18 +398,25 @@ where
         if *left {
             graph_left.add_edge(p_ph, q_ph, ());
         }
+
+        /*if *right && *left && !*has_loop {
+            intersection.push((p_ph, q_ph));
+        }*/
     }
 
     let mut next_state = states.len();
-    let mut i = 0;
+    //let mut i = 0;
+
+    // MERGES STATES USING RULES 1 AND 2!
+    // Merges every non trivial SCC
     loop {
         // Calculates SCCs for both dependency graphs
         let sccs_right = petgraph::algo::kosaraju_scc(&graph_right);
         let sccs_left = petgraph::algo::kosaraju_scc(&graph_left);
 
-        print_graph(&graph_right, &merge_info, format!("steps/right-{i}.gv"));
-        print_graph(&graph_left, &merge_info, format!("steps/left-{i}.gv"));
-        i += 1;
+        //print_graph(&graph_right, &merge_info, format!("steps/right-{i}.gv"));
+        //print_graph(&graph_left, &merge_info, format!("steps/left-{i}.gv"));
+        //i += 1;
 
         let biggest_right_scc = sccs_right
             .iter()
@@ -410,12 +427,12 @@ where
             .max_by(|a, b| a.len().cmp(&b.len()))
             .unwrap();
 
-        let (biggest_scc, graph, other_graph) =
-            if biggest_right_scc.len() >= biggest_left_scc.len() {
-                (biggest_right_scc, &mut graph_right, &mut graph_left)
-            } else {
-                (biggest_left_scc, &mut graph_left, &mut graph_right)
-            };
+        let (biggest_scc, graph, other_graph) = if biggest_right_scc.len() >= biggest_left_scc.len()
+        {
+            (biggest_right_scc, &mut graph_right, &mut graph_left)
+        } else {
+            (biggest_left_scc, &mut graph_left, &mut graph_right)
+        };
 
         if biggest_scc.len() == 1 {
             break;
@@ -424,6 +441,7 @@ where
         // Adds the node associated to the scc
         graph.add_node(next_state);
         other_graph.add_node(next_state);
+        containers.make_set(next_state).unwrap();
 
         let mut new_states_set = HashSet::new();
         let mut to_add_graph_in = HashSet::new();
@@ -455,6 +473,7 @@ where
             new_states_set.extend(original_states.iter().map(|s| s.to_owned()));
 
             merge_info.remove(&old_state);
+            containers.union(old_state, &next_state).unwrap();
         }
 
         merge_info.insert(next_state, new_states_set);
@@ -476,16 +495,139 @@ where
 
         next_state += 1;
     }
-    
+    // After this loop ends, no cicle is left in any dependency graph
+
+    // MERGES STATES USING RULE 3!
+
+    // All edges that exists in both graphs, indicated a preorder of type 3
+    let intersection = graph_right
+        .all_edges()
+        .filter(|(source, dest, _)| graph_left.contains_edge(*source, *dest))
+        .map(|(source, dest, _)| (source, dest))
+        .collect::<Vec<_>>();
+
+    for (old_source, old_dest) in intersection {
+        //println!("1) NEW STATE: {}", next_state);
+        //println!(
+        //    "2) Accessing ({}, {}) = ({}, {})",
+        //    old_source,
+        //    old_dest,
+        //    containers.find_set(&old_source).unwrap(),
+        //    containers.find_set(&old_dest).unwrap(),
+        //);
+        let source = containers.find_set(&old_source).unwrap();
+        let dest = containers.find_set(&old_dest).unwrap();
+
+        //print!("3) ({},", merge_info.get(&source).unwrap().to_str());
+        //println!("{})", merge_info.get(&dest).unwrap().to_str());
+
+        let pair = vec![source, dest];
+        graph_right.add_node(next_state);
+        graph_left.add_node(next_state);
+
+        let mut new_states_set = HashSet::new();
+        let mut to_add_right_in = HashSet::new();
+        let mut to_add_left_in = HashSet::new();
+        let mut to_add_right_out = HashMap::new();
+        let mut to_add_left_out = HashMap::new();
+
+        update_graph(
+            source,
+            next_state,
+            &pair,
+            &mut to_add_right_in,
+            &mut to_add_right_out,
+            &mut graph_right,
+        );
+        update_graph(
+            dest,
+            next_state,
+            &pair,
+            &mut to_add_right_in,
+            &mut to_add_right_out,
+            &mut graph_right,
+        );
+        update_graph(
+            source,
+            next_state,
+            &pair,
+            &mut to_add_left_in,
+            &mut to_add_left_out,
+            &mut graph_left,
+        );
+        update_graph(
+            dest,
+            next_state,
+            &pair,
+            &mut to_add_left_in,
+            &mut to_add_left_out,
+            &mut graph_left,
+        );
+
+        let original_states = merge_info.get(&source).unwrap();
+        new_states_set.extend(original_states.iter().map(|s| s.to_owned()));
+        let original_states = merge_info.get(&dest).unwrap();
+        new_states_set.extend(original_states.iter().map(|s| s.to_owned()));
+
+        merge_info.remove(&source);
+        merge_info.remove(&dest);
+
+        //println!("4) Adding state: {} -> {}", next_state, new_states_set.to_str());
+        containers.make_set(next_state).unwrap();
+        containers.union(&source, &next_state).unwrap();
+        containers.union(&dest, &next_state).unwrap();
+        //merge_info.insert(next_state, new_states_set);
+        let merged_state_ph = containers.find_set(&next_state).unwrap();
+        merge_info.insert(merged_state_ph, new_states_set);
+        //println!("6) {} -> {}", source, containers.find_set(&source).unwrap());
+        //println!("5) {} -> {}", dest, containers.find_set(&dest).unwrap());
+        //println!("7) {} -> {}", next_state, containers.find_set(&next_state).unwrap());
+
+        graph_right.extend(to_add_right_in);
+        graph_left.extend(to_add_left_in);
+
+        for (state_index, counter) in to_add_right_out {
+            if pair.len() == counter {
+                graph_right.add_edge(next_state, state_index, ());
+            }
+        }
+
+        for (state_index, counter) in to_add_left_out {
+            if pair.len() == counter {
+                graph_left.add_edge(next_state, state_index, ());
+            }
+        }
+
+        //print_graph(&graph_right, &merge_info, format!("steps/right-{i}.gv"));
+        //print_graph(&graph_left, &merge_info, format!("steps/left-{i}.gv"));
+        //i += 1;
+
+        next_state += 1;
+    }
+
     merge_info
         .into_iter()
         .map(|(_placeholder, states_set)| states_set)
         .collect()
 }
 
+/// Updates `graph` edges so that every edge going out or into `old_node` become
+/// and edge going out or into `new_node`. More precisely, what happens is that:
+/// - All edges of type `(other, old_node)` are removed and `(other, new_node)`
+///     is added to `to_add_in`;
+/// - All edges of type `(old_node, other)` are removed and `to_add_out` is updated
+///     so that it counts how many times and edge that goes into `old_node` is found.
+///
+/// After the call, it is safe to add every edge in `to_add_in` to `graph`, while
+/// for each pair `(source, count)`, and edge `(source, new_node)` can be added
+/// to `graph` only if `count == scc.len()`.
+///
+/// NOTE:
+/// * `old_node` is removed from `graph`'s nodes.
+/// * At the end of the call, all edges that involved `old_node` will have been removed.
 fn update_graph(
-    old_nodeindex: PlaceHolder,
-    new_nodeindex: PlaceHolder,
+    old_node: PlaceHolder,
+    new_node: PlaceHolder,
     scc: &Vec<PlaceHolder>,
     to_add_in: &mut HashSet<(PlaceHolder, PlaceHolder)>,
     to_add_out: &mut HashMap<PlaceHolder, usize>,
@@ -493,14 +635,16 @@ fn update_graph(
 ) {
     let mut to_remove = HashSet::new();
 
-    for (source, dest, _) in graph.edges_directed(old_nodeindex, Direction::Incoming) {
+    // Manages edges of type (old_node, other)
+    for (source, dest, _) in graph.edges_directed(old_node, Direction::Incoming) {
         if !scc.contains(&source) {
-            to_add_in.insert((source, new_nodeindex));
+            to_add_in.insert((source, new_node));
         }
         to_remove.insert((source, dest));
     }
 
-    for (source, dest, _) in graph.edges_directed(old_nodeindex, Direction::Outgoing) {
+    // Manages edges of type (other, old_node)
+    for (source, dest, _) in graph.edges_directed(old_node, Direction::Outgoing) {
         if !scc.contains(&dest) {
             let counter = to_add_out.entry(dest).or_default();
             *counter += 1;
@@ -512,7 +656,7 @@ fn update_graph(
         graph.remove_edge(source, dest);
     }
 
-    graph.remove_node(old_nodeindex);
+    graph.remove_node(old_node);
 }
 
 /*fn update_graph(
@@ -566,9 +710,9 @@ fn print_graph<S>(
     // Creates a new graph where nodes have as value the set of original states
     // they represents
     let mut trans: HashMap<PlaceHolder, NodeIndex> = HashMap::new();
-    for (old_index, set) in merge_info {
+    for (old_node, set) in merge_info {
         let new_index = graph.add_node(set.to_str());
-        trans.insert(*old_index, new_index);
+        trans.insert(*old_node, new_index);
     }
 
     for (source, dest, _) in old_graph.all_edges() {

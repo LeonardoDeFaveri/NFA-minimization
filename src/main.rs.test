@@ -14,13 +14,13 @@ mod nfa;
 mod utils;
 
 fn main() {
-    //let source_file = "tests/medium-9.gv";
-    let source_file = "mini_tests/nfa3.gv";
+    let source_file = "tests/huge-3.gv";
+    //let source_file = "mini_tests/nfa1.gv";
     let source = std::fs::read_to_string(source_file).unwrap();
     let nfa = Nfa::from_str(&source).unwrap();
 
     let rev_nfa = nfa.reverse();
-    save_as(&rev_nfa, "rev_nfa");
+    //save_as(&rev_nfa, "rev_nfa");
 
     let right_language = calc_right_language(&rev_nfa);
     let left_language = calc_right_language(&nfa);
@@ -50,8 +50,8 @@ fn main() {
     save_as(&min_pre1, "minimized/pre_priority");
     print_equivalence_classes("Preorder1 Equivalence classes", &res);*/
 
-    let res = algorithms::minimization::preorders_with_sccs(nfa.states(), &table,);
+    let res = algorithms::minimization::preorders_with_sccs(nfa.states(), &table);
     print_equivalence_classes("SCCs", &res);
-    let min = algorithms::build_minimized(&nfa, &res);
-    save_as(&min, "minimized/sccs");
+    //let min = algorithms::build_minimized(&nfa, &res);
+    //save_as(&min, "minimized/sccs");
 }

@@ -64,7 +64,6 @@ fn main() {
             "Left-Right Eq",
             "Reason priority",
             "SCCs",
-            "SCCs2"
         ],
     );
 }
