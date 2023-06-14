@@ -208,10 +208,6 @@ fn calc_relation_aux<S, A>(
     non_suitable_container.insert(state.to_owned());
     let is_final = nfa.is_final(state).unwrap();
     for other in nfa.states() {
-        if right_languages.get(other).unwrap().is_empty() {
-            non_suitable_container.insert(other.to_owned());
-        }
-
         // Final and non-final states can't be in a preorder relantionship
         if is_final != nfa.is_final(other).unwrap() {
             non_suitable_container.insert(other.to_owned());

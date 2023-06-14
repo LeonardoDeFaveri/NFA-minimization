@@ -8,6 +8,9 @@ mod nfa;
 #[allow(dead_code)]
 mod utils;
 
+#[cfg(test)]
+mod test;
+
 fn main() {
     let tests: Vec<String> = match std::env::args_os().nth(1) {
         Some(path) => match std::fs::read_dir(&path) {
