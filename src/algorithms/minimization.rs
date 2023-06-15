@@ -162,14 +162,18 @@ where
     merge_info.sets().collect()
 }
 
+/// Type used to identify states in depency graphs.
 type PlaceHolder = usize;
 
+/// Merges states using rule 3, then creates two dependency graphs, one for left
+/// and one for right preorders. Further reduction are carried out merging every
+/// time the biggest Strongly Connected Component of either of dependency graph.
 pub fn preorders_with_sccs<S>(
     states: &HashSet<S>,
     rel_table: &HashMap<(S, S), (bool, bool, bool)>,
 ) -> Vec<HashSet<S>>
 where
-    S: Eq + Hash + Clone + Display,
+    S: Eq + Hash + Clone,
 {
     // Maps each original state to its placeholder
     let mut all_ph: HashMap<&S, PlaceHolder> = HashMap::new();
@@ -239,15 +243,11 @@ where
         if p_ph == q_ph {
             continue;
         }
-        if *right {
-            if !graph_right.contains_edge(p_ph, q_ph) {
-                graph_right.add_edge(p_ph, q_ph, ());
-            }
+        if *right && !graph_right.contains_edge(p_ph, q_ph) {
+            graph_right.add_edge(p_ph, q_ph, ());
         }
-        if *left {
-            if !graph_left.contains_edge(p_ph, q_ph) {
-                graph_left.add_edge(p_ph, q_ph, ());
-            }
+        if *left && !graph_left.contains_edge(p_ph, q_ph) {
+            graph_left.add_edge(p_ph, q_ph, ());
         }
     }
 
@@ -255,7 +255,8 @@ where
     //let mut i = 0;
 
     // MERGES STATES USING RULES 1 AND 2!
-    // Merges every non trivial SCC
+    // Merges every non trivial SCC. After this loop ends, no cicle is left in
+    // any dependency graph
     loop {
         // Calculates SCCs for both dependency graphs
         let sccs_right = petgraph::algo::kosaraju_scc(&graph_right);
@@ -342,10 +343,8 @@ where
 
         new_state += 1;
     }
-    // After this loop ends, no cicle is left in any dependency graph
 
     // MERGES STATES USING RULE 3!
-
     // All edges that exists in both graphs, indicated a preorder of type 3
     /*let intersection = graph_right
         .all_edges()
@@ -507,50 +506,12 @@ fn update_graph(
     graph.remove_node(old_node);
 }
 
-/*fn update_graph(
-    old_nodeindex: NodeIndex,
-    new_nodeindex: NodeIndex,
-    scc: &Vec<NodeIndex>,
-    to_add_in: &mut HashSet<(NodeIndex, NodeIndex)>,
-    to_add_out: &mut HashMap<NodeIndex, usize>,
-    graph: &mut StableDiGraph<usize, ()>,
-) {
-    let mut to_remove = HashSet::new();
-
-    for edge in graph.edges_directed(old_nodeindex, Direction::Incoming) {
-        let (other, _) = graph.edge_endpoints(edge.id()).unwrap();
-        if !scc.contains(&other) {
-            to_add_in.insert((other, new_nodeindex));
-        }
-        to_remove.insert(edge.id());
-    }
-
-    for edge in graph.edges_directed(old_nodeindex, Direction::Outgoing) {
-        let (_, other) = graph.edge_endpoints(edge.id()).unwrap();
-        if !scc.contains(&other) {
-            let counter = to_add_out.entry(other).or_default();
-            *counter += 1;
-        }
-        to_remove.insert(edge.id());
-    }
-
-    graph.filter_map(
-        |_, weight| Some(weight),
-        |index, weight| {
-            if to_remove.contains(&index) {
-                None
-            } else {
-                Some(weight)
-            }
-        },
-    );
-    graph.remove_node(old_nodeindex);
-}*/
-
+/// Printrs `old_graph` using real states name as node label. The output is
+/// written `file_name`.
 fn print_graph<S>(
     old_graph: &DiGraphMap<usize, ()>,
     merge_info: &HashMap<PlaceHolder, HashSet<S>>,
-    name: String,
+    file_name: String,
 ) where
     S: Eq + Hash + Clone + Display,
 {
@@ -568,16 +529,16 @@ fn print_graph<S>(
     }
 
     let _ = std::fs::write(
-        name,
+        file_name,
         format!("{:?}", Dot::with_config(&graph, &[Config::EdgeNoLabel])),
     );
 }
 
-trait MyDisplay {
+trait Stringify {
     fn to_str(&self) -> String;
 }
 
-impl<S> MyDisplay for HashSet<S>
+impl<S> Stringify for HashSet<S>
 where
     S: Display,
 {

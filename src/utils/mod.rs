@@ -5,11 +5,14 @@ use std::{
     str::FromStr,
 };
 
+use petgraph::prelude::DiGraphMap;
+
 use crate::{
     algorithms::{self, calc_right_language, initialize_rel_table, Language},
     nfa::Nfa,
 };
 
+/// Struct used to keep all sizes of minimized nfas.
 pub struct Sizes {
     pub original: usize,
     pub right_eq: usize,
@@ -18,6 +21,7 @@ pub struct Sizes {
     pub left_right_eq: usize,
     pub reason: usize,
     pub sccs: usize,
+    pub sccs_count: (usize, usize, usize),
 }
 
 impl Sizes {
@@ -30,6 +34,9 @@ impl Sizes {
             self.left_right_eq,
             self.reason,
             self.sccs,
+            self.sccs_count.0,
+            self.sccs_count.1,
+            self.sccs_count.2,
         ]
     }
 }
@@ -44,6 +51,7 @@ impl Default for Sizes {
             left_right_eq: 0,
             reason: 0,
             sccs: 0,
+            sccs_count: (0, 0, 0),
         }
     }
 }
@@ -86,6 +94,8 @@ pub fn minimize(source_file: &str) -> Sizes {
     let res = algorithms::minimization::preorders_with_sccs(nfa.states(), &table);
     let sccs = res.len();
 
+    let sccs_count = count_sccs(nfa.states(), &table);
+
     Sizes {
         original,
         right_eq,
@@ -94,6 +104,7 @@ pub fn minimize(source_file: &str) -> Sizes {
         left_right_eq,
         reason,
         sccs,
+        sccs_count,
     }
 }
 
@@ -111,7 +122,8 @@ where
     println!("{output}");
 }
 
-/// Saves an nfa to a `.gv` and `.pdf` file.
+/// Saves an nfa to a `.gv` and `.pdf` file. The extensions are automatically
+/// added.
 pub fn save_as<S, A>(nfa: &Nfa<S, A>, file_name: &str)
 where
     S: Eq + Hash + Clone + Debug + Display,
@@ -130,6 +142,7 @@ where
     let _ = std::fs::write(format!("{}.pdf", &file_name), output.stdout);
 }
 
+/// Utility function for printing merged states of an NFA.
 pub fn print_equivalence_classes<S>(title: &str, classes: &Vec<HashSet<S>>)
 where
     S: Display,
@@ -142,6 +155,48 @@ where
         }
         println!("}}");
     }
+}
+
+/// Builds left, right and mixed dependency graphs and returns the number of
+/// Strongly Connected Components.
+pub fn count_sccs<S>(
+    states: &HashSet<S>,
+    rel_table: &HashMap<(S, S), (bool, bool, bool)>,
+) -> (usize, usize, usize)
+where
+    S: Eq + Hash + Clone,
+{
+    type PlaceHolder = usize;
+    let mut all_ph: HashMap<&S, PlaceHolder> = HashMap::new();
+    let mut graph_all: DiGraphMap<PlaceHolder, ()> = DiGraphMap::new();
+    let mut graph_right: DiGraphMap<PlaceHolder, ()> = DiGraphMap::new();
+    let mut graph_left: DiGraphMap<PlaceHolder, ()> = DiGraphMap::new();
+
+    for (ph, state) in states.iter().enumerate() {
+        graph_right.add_node(ph);
+        graph_left.add_node(ph);
+        all_ph.insert(state, ph);
+    }
+
+    for ((p, q), (right, left, _)) in rel_table {
+        let p_ph = all_ph[&p];
+        let q_ph = all_ph[&q];
+
+        if *right {
+            graph_right.add_edge(p_ph, q_ph, ());
+            graph_all.add_edge(p_ph, q_ph, ());
+        }
+        if *left {
+            graph_left.add_edge(p_ph, q_ph, ());
+            graph_all.add_edge(p_ph, q_ph, ());
+        }
+    }
+
+    let sccs_right = petgraph::algo::kosaraju_scc(&graph_right);
+    let sccs_left = petgraph::algo::kosaraju_scc(&graph_left);
+    let sccs_all = petgraph::algo::kosaraju_scc(&graph_all);
+
+    (sccs_left.len(), sccs_right.len(), sccs_all.len())
 }
 
 pub fn test_minimization(source_file: &str) -> Vec<usize> {

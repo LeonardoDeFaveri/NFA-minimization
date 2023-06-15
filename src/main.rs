@@ -67,6 +67,9 @@ fn main() {
             "Left-Right Eq",
             "Reason priority",
             "SCCs",
+            "Left SCCs",
+            "Right SCCs",
+            "All SCCs",
         ],
     );
 }
@@ -102,6 +105,7 @@ fn print_results(sizes: &Vec<Vec<usize>>, titles: Vec<&str>) {
         }
         table_rows.push(row);
     }
+
     // Summary row
     let mut summary_row = vec![
         "Res".cell().justify(Justify::Center).bold(true),
