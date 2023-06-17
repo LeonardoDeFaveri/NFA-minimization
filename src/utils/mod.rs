@@ -21,6 +21,7 @@ pub struct Sizes {
     pub left_right_eq: usize,
     pub reason: usize,
     pub sccs: usize,
+    pub sccs2: usize,
     pub sccs_count: (usize, usize, usize),
 }
 
@@ -34,6 +35,7 @@ impl Sizes {
             self.left_right_eq,
             self.reason,
             self.sccs,
+            self.sccs2,
             self.sccs_count.0,
             self.sccs_count.1,
             self.sccs_count.2,
@@ -51,6 +53,7 @@ impl Default for Sizes {
             left_right_eq: 0,
             reason: 0,
             sccs: 0,
+            sccs2: 0,
             sccs_count: (0, 0, 0),
         }
     }
@@ -94,6 +97,9 @@ pub fn minimize(source_file: &str) -> Sizes {
     let res = algorithms::minimization::preorders_with_sccs(nfa.states(), &table);
     let sccs = res.len();
 
+    let res = algorithms::minimization::preorders_with_sccs2(nfa.states(), &table);
+    let sccs2 = res.len();
+
     let sccs_count = count_sccs(nfa.states(), &table);
 
     Sizes {
@@ -104,6 +110,7 @@ pub fn minimize(source_file: &str) -> Sizes {
         left_right_eq,
         reason,
         sccs,
+        sccs2,
         sccs_count,
     }
 }

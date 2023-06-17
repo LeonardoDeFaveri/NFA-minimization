@@ -67,6 +67,7 @@ fn main() {
             "Left-Right Eq",
             "Reason priority",
             "SCCs",
+            "SCCs2",
             "Left SCCs",
             "Right SCCs",
             "All SCCs",
@@ -78,6 +79,14 @@ fn print_results(sizes: &Vec<Vec<usize>>, titles: Vec<&str>) {
     let sizes_count = sizes.len();
     if sizes_count == 0 {
         return;
+    }
+
+    // Prepares titles
+    let mut title_row1 = vec![];
+    let mut title_row2 = vec![];
+    for title in titles {
+        title_row1.push(title.cell().justify(Justify::Center).bold(true));
+        title_row2.push(title.cell().justify(Justify::Center).bold(true));
     }
 
     // Calculate average reduction in size for each method
@@ -107,22 +116,22 @@ fn print_results(sizes: &Vec<Vec<usize>>, titles: Vec<&str>) {
     }
 
     // Summary row
+    table_rows.push(title_row2);
     let mut summary_row = vec![
-        "Res".cell().justify(Justify::Center).bold(true),
-        "-".cell().justify(Justify::Center).bold(true),
+        "Res".cell().justify(Justify::Center).italic(true),
+        "-".cell().justify(Justify::Center).italic(true),
     ];
-    for red in avg_red {
+    for red in &avg_red[..avg_red.len() - 3] {
         let red_str = format!("{:.3}%", red);
-        summary_row.push(red_str.cell().justify(Justify::Center).bold(true));
+        summary_row.push(red_str.cell().justify(Justify::Center).italic(true));
     }
+    summary_row.extend([
+        "-".cell().justify(Justify::Center).italic(true),
+        "-".cell().justify(Justify::Center).italic(true),
+        "-".cell().justify(Justify::Center).italic(true),
+    ]);
     table_rows.push(summary_row);
 
-    // Prepares titles
-    let mut title_row = vec![];
-    for title in titles {
-        title_row.push(title.cell().justify(Justify::Center).bold(true));
-    }
-
-    let table = table_rows.table().title(title_row);
+    let table = table_rows.table().title(title_row1);
     let _ = print_stdout(table);
 }

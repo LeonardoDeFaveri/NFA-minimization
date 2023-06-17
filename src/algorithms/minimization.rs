@@ -165,10 +165,151 @@ where
 /// Type used to identify states in depency graphs.
 type PlaceHolder = usize;
 
+/// Builds 3 depency graphs: left, right, preorder. While there is at least one
+/// non trivial Strongly Connected Component, merges the states in that component
+/// into a single state and updates all the graphs.
+pub fn preorders_with_sccs<S>(
+    states: &HashSet<S>,
+    rel_table: &HashMap<(S, S), (bool, bool, bool)>,
+) -> Vec<HashSet<S>>
+where
+    S: Eq + Hash + Clone + Display,
+{
+    let mut all_ph: HashMap<&S, PlaceHolder> = HashMap::new();
+    let mut graph_pre: DiGraphMap<PlaceHolder, ()> = DiGraphMap::new();
+    let mut graph_right: DiGraphMap<PlaceHolder, ()> = DiGraphMap::new();
+    let mut graph_left: DiGraphMap<PlaceHolder, ()> = DiGraphMap::new();
+
+    let mut merge_info: HashMap<PlaceHolder, HashSet<S>> = HashMap::new();
+
+    for (ph, state) in states.iter().enumerate() {
+        graph_pre.add_node(ph);
+        graph_right.add_node(ph);
+        graph_left.add_node(ph);
+        all_ph.insert(state, ph);
+
+        let mut set = HashSet::new();
+        set.insert(state.clone());
+        merge_info.insert(ph, set);
+    }
+
+    for ((p, q), (right, left, has_loop)) in rel_table {
+        let p_ph = all_ph[&p];
+        let q_ph = all_ph[&q];
+
+        if *right {
+            graph_right.add_edge(p_ph, q_ph, ());
+        }
+        if *left {
+            graph_left.add_edge(p_ph, q_ph, ());
+        }
+        if *right && *left && !*has_loop {
+            graph_pre.add_edge(p_ph, q_ph, ());
+            graph_pre.add_edge(q_ph, p_ph, ());
+        }
+    }
+
+    let mut new_state = states.len();
+    loop {
+        let sccs_pre = petgraph::algo::kosaraju_scc(&graph_pre);
+        let sccs_right = petgraph::algo::kosaraju_scc(&graph_right);
+        let sccs_left = petgraph::algo::kosaraju_scc(&graph_left);
+
+        let mut sccs = [
+            (get_biggest_scc(&sccs_pre), &mut graph_pre),
+            (get_biggest_scc(&sccs_right), &mut graph_right),
+            (get_biggest_scc(&sccs_left), &mut graph_left),
+        ];
+        sccs.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+        let [(scc, graph), (_, other_graph1), (_, other_graph2)] = sccs;
+
+        if scc.len() == 1 {
+            break;
+        }
+
+        graph.add_node(new_state);
+        other_graph1.add_node(new_state);
+        other_graph2.add_node(new_state);
+
+        let mut new_states_set = HashSet::new();
+        let mut to_add_graph_in = HashSet::new();
+        let mut to_add_other1_in = HashSet::new();
+        let mut to_add_other2_in = HashSet::new();
+        let mut to_add_graph_out = HashMap::new();
+        let mut to_add_other1_out = HashMap::new();
+        let mut to_add_other2_out = HashMap::new();
+
+        for old_state in scc {
+            update_graph(
+                *old_state,
+                new_state,
+                scc,
+                &mut to_add_graph_in,
+                &mut to_add_graph_out,
+                graph,
+            );
+            update_graph(
+                *old_state,
+                new_state,
+                scc,
+                &mut to_add_other1_in,
+                &mut to_add_other1_out,
+                other_graph1,
+            );
+            update_graph(
+                *old_state,
+                new_state,
+                scc,
+                &mut to_add_other2_in,
+                &mut to_add_other2_out,
+                other_graph2,
+            );
+
+            let original_states = merge_info.get(&old_state).unwrap();
+            new_states_set.extend(original_states.iter().map(|s| s.to_owned()));
+            merge_info.remove(&old_state);
+        }
+        merge_info.insert(new_state, new_states_set);
+
+        graph.extend(to_add_graph_in);
+        other_graph1.extend(to_add_other1_in);
+        other_graph2.extend(to_add_other2_in);
+
+        for (state_index, counter) in to_add_graph_out {
+            if scc.len() == counter {
+                graph.add_edge(new_state, state_index, ());
+            }
+        }
+
+        for (state_index, counter) in to_add_other1_out {
+            if scc.len() == counter {
+                other_graph1.add_edge(new_state, state_index, ());
+            }
+        }
+
+        for (state_index, counter) in to_add_other2_out {
+            if scc.len() == counter {
+                other_graph2.add_edge(new_state, state_index, ());
+            }
+        }
+
+        new_state += 1;
+    }
+
+    merge_info
+        .into_iter()
+        .map(|(_placeholder, states_set)| states_set)
+        .collect()
+}
+
+fn get_biggest_scc(sccs: &Vec<Vec<PlaceHolder>>) -> &Vec<PlaceHolder> {
+    sccs.iter().max_by(|a, b| a.len().cmp(&b.len())).unwrap()
+}
+
 /// Merges states using rule 3, then creates two dependency graphs, one for left
 /// and one for right preorders. Further reduction are carried out merging every
 /// time the biggest Strongly Connected Component of either of dependency graph.
-pub fn preorders_with_sccs<S>(
+pub fn preorders_with_sccs2<S>(
     states: &HashSet<S>,
     rel_table: &HashMap<(S, S), (bool, bool, bool)>,
 ) -> Vec<HashSet<S>>
@@ -266,14 +407,8 @@ where
         //print_graph(&graph_left, &merge_info, format!("steps/left-{i}.gv"));
         //i += 1;
 
-        let biggest_right_scc = sccs_right
-            .iter()
-            .max_by(|a, b| a.len().cmp(&b.len()))
-            .unwrap();
-        let biggest_left_scc = sccs_left
-            .iter()
-            .max_by(|a, b| a.len().cmp(&b.len()))
-            .unwrap();
+        let biggest_right_scc = get_biggest_scc(&sccs_right);
+        let biggest_left_scc = get_biggest_scc(&sccs_left);
 
         let (biggest_scc, graph, other_graph) = if biggest_right_scc.len() >= biggest_left_scc.len()
         {
