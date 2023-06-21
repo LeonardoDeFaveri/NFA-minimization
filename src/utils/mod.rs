@@ -73,19 +73,19 @@ pub fn minimize(source_file: &str) -> Sizes {
     let table = initialize_rel_table(&nfa, &right, &left);
 
     // Minimize using only right equivalence classes
-    let res = algorithms::minimization::right_eq(nfa.states(), &right);
+    let res = algorithms::minimization::eq::right_eq(nfa.states(), &right);
     let right_eq = res.len();
 
     // Minimize using only left equivalence classes
-    let res = algorithms::minimization::right_eq(nfa.states(), &left);
+    let res = algorithms::minimization::eq::right_eq(nfa.states(), &left);
     let left_eq = res.len();
 
     // Minimize using right and then left equivalence classes
-    let res = algorithms::minimization::right_left_eq(nfa.states(), &right, &left);
+    let res = algorithms::minimization::eq::right_left_eq(nfa.states(), &right, &left);
     let right_left_eq = res.len();
 
     // Minimize using left and then right equivalence classes
-    let res = algorithms::minimization::right_left_eq(nfa.states(), &left, &right);
+    let res = algorithms::minimization::eq::right_left_eq(nfa.states(), &left, &right);
     let left_right_eq = res.len();
 
     // Minimize using merging rules in order: iii, i, ii
@@ -241,28 +241,28 @@ pub fn test_minimization(source_file: &str) -> Vec<usize> {
 
     // Minimization algorithms
     // Minimize using only right equivalence classes
-    let res = algorithms::minimization::right_eq(nfa.states(), &right);
+    let res = algorithms::minimization::eq::right_eq(nfa.states(), &right);
     sizes.push(res.len());
     let min_right = algorithms::build_minimized(&nfa, &res);
     save_as(&min_right, "minimized/right");
     //print_equivalence_classes("Right Equivalence classes", &res);
 
     // Minimize using only left equivalence classes
-    let res = algorithms::minimization::right_eq(nfa.states(), &left);
+    let res = algorithms::minimization::eq::right_eq(nfa.states(), &left);
     sizes.push(res.len());
     let min_left = algorithms::build_minimized(&nfa, &res);
     save_as(&min_left, "minimized/left");
     //print_equivalence_classes("Left Equivalence classes", &res);
 
     // Minimize using right and then left equivalence classes
-    let res = algorithms::minimization::right_left_eq(nfa.states(), &right, &left);
+    let res = algorithms::minimization::eq::right_left_eq(nfa.states(), &right, &left);
     sizes.push(res.len());
     let min_right_left = algorithms::build_minimized(&nfa, &res);
     save_as(&min_right_left, "minimized/right_left");
     //print_equivalence_classes("Right-Left Equivalence classes", &res);
 
     // Minimize using left and then right equivalence classes
-    let res = algorithms::minimization::right_left_eq(nfa.states(), &left, &right);
+    let res = algorithms::minimization::eq::right_left_eq(nfa.states(), &left, &right);
     sizes.push(res.len());
     let min_left_right = algorithms::build_minimized(&nfa, &res);
     save_as(&min_left_right, "minimized/left_right");

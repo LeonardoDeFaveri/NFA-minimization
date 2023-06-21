@@ -37,4 +37,9 @@ fn general() {
     print_equivalence_classes("SCCs", &res);
     let min = build_minimized(&nfa, &res);
     save_as(&min, "scc");
+
+    let res = minimization::preorders_with_sccs2(nfa.states(), &table);
+    print_equivalence_classes("SCCs2", &res);
+    let min = build_minimized(&nfa, &res);
+    save_as(&min, "scc2");
 }

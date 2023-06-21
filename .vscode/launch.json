@@ -32,14 +32,13 @@
                     "--no-run",
                     "--bin=nfa_minimization",
                     "--package=nfa_minimization",
-                    "--", "--show-output"
                 ],
                 "filter": {
                     "name": "nfa_minimization",
                     "kind": "bin"
                 }
             },
-            "args": [],
+            "args": ["--show-output"],
             "cwd": "${workspaceFolder}"
         }
     ]
