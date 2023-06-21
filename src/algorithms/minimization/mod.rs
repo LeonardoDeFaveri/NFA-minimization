@@ -1,9 +1,8 @@
 use disjoint_hash_set::DisjointHashSet;
-use petgraph::{prelude::DiGraphMap, Direction, graph};
+use petgraph::{prelude::DiGraphMap};
 use std::{
     collections::{HashMap, HashSet},
-    fmt::Display,
-    hash::{self, Hash},
+    hash::Hash,
 };
 use union_find_rs::prelude::*;
 
