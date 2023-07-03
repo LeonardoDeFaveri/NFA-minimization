@@ -44,7 +44,7 @@ fn main() {
     let tests_count = tests.len();
     for (i, path) in tests.iter().enumerate() {
         print!(
-            "\rAnalyzing test: {:0>2}/{:0>2} [{:^20}]",
+            "\rAnalyzing test: {:0>2}/{:0>2} [{:^30}]",
             i + 1,
             tests_count,
             path

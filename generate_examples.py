@@ -4,6 +4,8 @@ import math
 
 import io, os, sys, time
 
+avg = 0
+
 grammars = {
     'g_mine': [
         
@@ -62,6 +64,11 @@ def generate_example(alphabet_size: int, word_size: int, op_density = 0.2, cut_l
     
         if len(nfa.States) < cut_lower_than:
             continue
+
+        #min_nfa = nfa.lrEquivNFA()
+        #global avg
+        #avg += (len(nfa.States) - len(min_nfa.States)) / len(nfa.States)
+        #print(f'NFA: {len(nfa.States)} | MIN: {len(min_nfa.States)}')
         return nfa
 
 # Generates:
@@ -125,3 +132,5 @@ for i in range(1, 15 + 1):
 end = time.time()
 print()
 print(f'Example generation completed in {end - start:.3f} secods')
+
+print(f'Avg reduction: {avg / 60}%')
