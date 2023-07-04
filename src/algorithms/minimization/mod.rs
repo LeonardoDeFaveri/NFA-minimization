@@ -236,6 +236,10 @@ where
 /// Merges states using rule 3, then creates two dependency graphs, one for left
 /// and one for right preorders. Further reduction are carried out merging every
 /// time the biggest Strongly Connected Component of either of dependency graph.
+/// 
+/// ### Complexity
+/// O(S*N(N+E)) where S is the maximum number of SCC that there can be (must be
+/// estimated in some way, idea: N/2 SCCs)
 pub fn preorders_with_sccs2<S>(
     states: &HashSet<S>,
     rel_table: &HashMap<(S, S), (bool, bool, bool)>,
@@ -278,6 +282,8 @@ where
     }
 
     let mut new_state = states.len();
+    // In the worst every SCC of the 3 depency graphs includes different states,
+    // so the loop executes one time for each SCC
     loop {
         let sccs_pre = petgraph::algo::kosaraju_scc(&graph_pre);
         let sccs_right = petgraph::algo::kosaraju_scc(&graph_right);
@@ -310,6 +316,9 @@ where
         let mut to_add_other1_out = HashMap::new();
         let mut to_add_other2_out = HashMap::new();
 
+        // For sure this loop is limited by the number of states in the original
+        // NFA because there might be one giant SCC holding every state.
+        // Putting all together, this loop has a complexity of O(N(N+E))
         for old_state in scc {
             update_graph(
                 *old_state,
@@ -336,6 +345,8 @@ where
                 other_graph2,
             );
 
+            // Trivially, this is limited by the number of states in the original
+            // NFA
             let original_states = merge_info.get(&old_state).unwrap();
             new_states_set.extend(original_states.iter().map(|s| s.to_owned()));
             merge_info.remove(&old_state);

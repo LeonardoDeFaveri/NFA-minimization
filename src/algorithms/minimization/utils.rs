@@ -16,12 +16,16 @@ pub type PlaceHolder = usize;
 ///     so that it counts how many times and edge that goes into `old_node` is found.
 ///
 /// After the call, it is safe to add every edge in `to_add_in` to `graph`, while
-/// for each pair `(source, count)`, and edge `(source, new_node)` can be added
+/// for each pair `(source, count)`, and edge `(new_node, source)` can be added
 /// to `graph` only if `count == scc.len()`.
 ///
 /// NOTE:
 /// * `old_node` is removed from `graph`'s nodes.
 /// * At the end of the call, all edges that involved `old_node` will have been removed.
+/// 
+/// ### Complexity
+/// Every edge that has `old_node` as one of its ends is checked. The worst case
+/// is when every edge passes through `old_node`, so the complexity is O(E).
 pub fn update_graph(
     old_node: PlaceHolder,
     new_node: PlaceHolder,
