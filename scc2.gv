@@ -1,0 +1,17 @@
+digraph {
+	rankdir = LR;
+	size = "30,20";
+	node [shape = point]; "dummy0"
+	node [shape = circle]; "2"
+	"dummy0" -> "2";
+	node [shape = circle]; "0";
+	node [shape = doublecircle]; "1";
+	node [shape = circle]; "3";
+	"3" -> "1" [label = "y"];
+	"3" -> "3" [label = "d"];
+	"3" -> "3" [label = "e"];
+	"0" -> "3" [label = "f"];
+	"0" -> "3" [label = "c"];
+	"2" -> "0" [label = "x"];
+	"2" -> "0" [label = "a"];
+}

@@ -8,7 +8,7 @@ use std::{
 use petgraph::prelude::DiGraphMap;
 
 use crate::{
-    algorithms::{self, calc_right_language, initialize_rel_table, Language},
+    algorithms::{self, calc_right_language, initialize_rel_table, Language, Path},
     nfa::Nfa,
 };
 
@@ -59,6 +59,35 @@ impl Default for Sizes {
     }
 }
 
+impl PartialEq for Path<String, String> {
+    fn eq(&self, other: &Self) -> bool {
+        self.transition_symbol == other.transition_symbol && self.reached_state == other.reached_state
+    }
+}
+
+fn test_equality(langs1: &HashMap<String, Language<String, String>>, langs2: &HashMap<String, Language<String, String>>) -> bool {
+    for (state, lang1) in langs1 {
+        let lang2 = &langs2[state];
+
+        if lang1.loops() != lang2.loops() {
+            return false;
+        }
+
+        for path1 in lang1.paths() {
+            if !lang2.paths().contains(path1) {
+                return false;
+            }
+        }
+        for path2 in lang2.paths() {
+            if !lang1.paths().contains(path2) {
+                return false;
+            }
+        }
+    }
+
+    true
+}
+
 pub fn minimize(source_file: &str) -> Sizes {
     // Original NFA
     let source = std::fs::read_to_string(source_file).unwrap();
@@ -66,8 +95,9 @@ pub fn minimize(source_file: &str) -> Sizes {
     let original = nfa.states().len();
 
     let rev_nfa = nfa.reverse();
-    let right_language = calc_right_language(&rev_nfa);
-    let left_language = calc_right_language(&nfa);
+    let right_language = calc_right_language(&nfa);
+    let left_language = calc_right_language(&rev_nfa);
+
     let right = algorithms::calc_relation(&nfa, &right_language);
     let left = algorithms::calc_relation(&rev_nfa, &left_language);
     let table = initialize_rel_table(&nfa, &right, &left);

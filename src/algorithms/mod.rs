@@ -107,7 +107,7 @@ where
     }
 }
 
-/// Calculates the right language of an nfa. Takes as input the revere nfa.
+/* Old implementation
 pub fn calc_right_language<S, A>(rev_nfa: &Nfa<S, A>) -> HashMap<S, Language<S, A>>
 where
     S: Eq + Hash + Clone + Debug + Display,
@@ -151,6 +151,61 @@ where
     // Each final state in `nfa` can accept as right language its self-loop
     // by its own
     for state in rev_nfa.initial_states() {
+        let state_lang = languages.get_mut(state).unwrap();
+        let loop_symbols = state_lang.loops().to_owned();
+        for symbol in loop_symbols {
+            let path = Path::new(symbol, state.to_owned());
+            state_lang.push_path(path);
+        }
+    }
+
+    languages
+}*/
+
+/// Calculates the right language of an nfa. Takes as input the revere nfa.
+pub fn calc_right_language<S, A>(rev_nfa: &Nfa<S, A>) -> HashMap<S, Language<S, A>>
+where
+    S: Eq + Hash + Clone + Debug + Display,
+    A: Eq + Hash + Clone + Debug + Display,
+{
+    let mut languages = HashMap::new();
+    let mut added = HashSet::new();
+    for state in rev_nfa.states() {
+        languages.insert(state.to_owned(), Language::new());
+    }
+
+    let mut states = VecDeque::new();
+    for state in rev_nfa.initial_states() {
+        states.push_back(state);
+        added.insert(state.to_owned());
+    }
+
+    while let Some(state) = states.pop_front() {
+        for symbol in rev_nfa.symbols() {
+            let reached_states = rev_nfa.eval_symbol_from_state(state, symbol).unwrap();
+
+            for other_state in reached_states {
+                if *other_state == *state {
+                    languages
+                        .get_mut(state)
+                        .unwrap()
+                        .push_loop(symbol.to_owned());
+                } else {
+                    let path = Path::new(symbol.to_owned(), other_state.to_owned());
+                    languages.get_mut(state).unwrap().push_path(path);
+                }
+
+                if !added.contains(other_state) {
+                    added.insert(other_state.to_owned());
+                    states.push_back(other_state);
+                }
+            }
+        }
+    }
+
+    // Each final state in `nfa` can accept as right language its self-loop
+    // by its own
+    for state in rev_nfa.final_states() {
         let state_lang = languages.get_mut(state).unwrap();
         let loop_symbols = state_lang.loops().to_owned();
         for symbol in loop_symbols {

@@ -4,7 +4,7 @@ use std::str::FromStr;
 #[test]
 fn general() {
     //let source_file = "tests/medium-9.gv";
-    let source_file = "mini_tests/nfa5.gv";
+    let source_file = "mini_tests/nfa1.gv";
     let source = std::fs::read_to_string(source_file).unwrap();
     let nfa = Nfa::from_str(&source).unwrap();
 
