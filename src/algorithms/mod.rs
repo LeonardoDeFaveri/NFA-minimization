@@ -110,8 +110,8 @@ where
 /// Calculates the right language of an nfa.
 pub fn calc_right_language<S, A>(nfa: &Nfa<S, A>) -> HashMap<S, Language<S, A>>
 where
-    S: Eq + Hash + Clone + Debug + Display,
-    A: Eq + Hash + Clone + Debug + Display,
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
 {
     let mut languages = HashMap::new();
     let mut added = HashSet::new();
@@ -157,8 +157,8 @@ pub fn calc_relation<S, A>(
     right_languages: &HashMap<S, Language<S, A>>,
 ) -> HashSet<(S, S)>
 where
-    S: Eq + Hash + Clone + Debug + Display,
-    A: Eq + Hash + Clone + Debug + Display,
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
 {
     let mut rel = HashSet::new();
     let mut checked = HashSet::new();
