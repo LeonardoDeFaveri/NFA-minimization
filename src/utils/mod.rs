@@ -61,11 +61,15 @@ impl Default for Sizes {
 
 impl PartialEq for Path<String, String> {
     fn eq(&self, other: &Self) -> bool {
-        self.transition_symbol == other.transition_symbol && self.reached_state == other.reached_state
+        self.transition_symbol == other.transition_symbol
+            && self.reached_state == other.reached_state
     }
 }
 
-fn test_equality(langs1: &HashMap<String, Language<String, String>>, langs2: &HashMap<String, Language<String, String>>) -> bool {
+fn test_equality(
+    langs1: &HashMap<String, Language<String, String>>,
+    langs2: &HashMap<String, Language<String, String>>,
+) -> bool {
     for (state, lang1) in langs1 {
         let lang2 = &langs2[state];
 

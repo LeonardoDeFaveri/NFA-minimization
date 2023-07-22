@@ -216,20 +216,16 @@ fn calc_relation_aux<S, A>(
 
             // Checks if there's at least one of other's path that contains path
             let mut found = false;
-            let other_lang = right_languages.get(other).unwrap();
-            for other_path in other_lang.paths() {
-                if path.transition_symbol != other_path.transition_symbol {
-                    continue;
-                }
-
-                if path.reached_state != other_path.reached_state
-                    && !rel
-                        .contains(&(path.reached_state.clone(), other_path.reached_state.clone()))
+            for other_state in nfa
+                .eval_symbol_from_state(other, &path.transition_symbol)
+                .unwrap()
+            {
+                if path.reached_state == *other_state
+                    || rel.contains(&(path.reached_state.clone(), other_state.clone()))
                 {
-                    continue;
+                    found = true;
+                    break;
                 }
-
-                found = true;
             }
 
             if !found {
@@ -262,22 +258,20 @@ fn calc_relation_aux<S, A>(
         } else {
             // There is at least on self-loop on state that doesn't correspond
             // to a self-loop on other, so further checks are necessary
-            waiting_contexts.push((other, missing)) //Context::new(other, missing));
+            waiting_contexts.push((other, missing));
         }
     }
 
     // For each pair (reached_state, missing_self_loops) checks if reached_state
-    // has an out-transition towards a state that contains state for each
+    // has an out-transition towards a state that contains `state` for each
     // symbol in missing_self_loops
     for (reached_state, missing_self_loops) in waiting_contexts {
-        let other_lang = right_languages.get(reached_state).unwrap();
         let mut to_solve_count = missing_self_loops.len();
 
         for symbol in missing_self_loops {
-            for other_path in other_lang.paths() {
-                if other_path.transition_symbol == *symbol
-                    && (*state == other_path.reached_state
-                        || rel.contains(&(state.to_owned(), other_path.reached_state.to_owned())))
+            for other_state in nfa.eval_symbol_from_state(reached_state, symbol).unwrap() {
+                if *state == *other_state
+                    || rel.contains(&(state.to_owned(), other_state.to_owned()))
                 {
                     to_solve_count -= 1;
                     break;

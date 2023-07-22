@@ -2,7 +2,8 @@ use disjoint_hash_set::DisjointHashSet;
 use petgraph::prelude::DiGraphMap;
 use std::{
     collections::{HashMap, HashSet},
-    hash::Hash};
+    hash::Hash,
+};
 
 use crate::algorithms::minimization::utils::*;
 
@@ -236,7 +237,7 @@ where
 /// Merges states using rule 3, then creates two dependency graphs, one for left
 /// and one for right preorders. Further reduction are carried out merging every
 /// time the biggest Strongly Connected Component of either of dependency graph.
-/// 
+///
 /// ### Complexity
 /// O(S*N(N+E)) where S is the maximum number of SCC that there can be (must be
 /// estimated in some way, idea: N/2 SCCs)

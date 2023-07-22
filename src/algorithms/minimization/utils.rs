@@ -22,7 +22,7 @@ pub type PlaceHolder = usize;
 /// NOTE:
 /// * `old_node` is removed from `graph`'s nodes.
 /// * At the end of the call, all edges that involved `old_node` will have been removed.
-/// 
+///
 /// ### Complexity
 /// Every edge that has `old_node` as one of its ends is checked. The worst case
 /// is when every edge passes through `old_node`, so the complexity is O(E).
