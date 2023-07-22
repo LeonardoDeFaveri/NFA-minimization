@@ -307,8 +307,8 @@ pub fn initialize_rel_table<S, A>(
     left_rel: &HashSet<(S, S)>,
 ) -> HashMap<(S, S), (bool, bool, bool)>
 where
-    S: Eq + Hash + Clone + Debug + Display,
-    A: Eq + Hash + Clone + Debug + Display,
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
 {
     let mut table = HashMap::new();
     let loops = find_if_loops(&nfa);
@@ -335,8 +335,8 @@ where
 /// that begins and ends in them.
 fn find_if_loops<S, A>(nfa: &Nfa<S, A>) -> HashSet<S>
 where
-    S: Eq + Hash + Clone + Debug + Display,
-    A: Eq + Hash + Clone + Debug + Display,
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
 {
     let mut result = HashSet::new();
 
@@ -371,8 +371,8 @@ fn find_if_loops_aux<'a, S, A>(
     dt: &mut HashMap<&'a S, u64>,
     ft: &mut HashMap<&'a S, u64>,
 ) where
-    S: Eq + Hash + Clone + Debug + Display,
-    A: Eq + Hash + Clone + Debug + Display,
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
 {
     *time += 1;
     dt.insert(state, *time);
@@ -405,8 +405,8 @@ fn find_if_loops_aux<'a, S, A>(
 /// each set of states is associated to one state.
 pub fn build_minimized<S, A>(nfa: &Nfa<S, A>, new_states: &Vec<HashSet<S>>) -> Nfa<usize, A>
 where
-    S: Eq + Hash + Clone + Debug + Display,
-    A: Eq + Hash + Clone + Debug + Display,
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
 {
     let mut new_nfa = Nfa::new();
     let mut containers = HashMap::new();
