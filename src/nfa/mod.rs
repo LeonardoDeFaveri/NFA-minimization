@@ -18,8 +18,8 @@ pub enum NfaErrors<S, A> {
 #[derive(Debug)]
 pub struct Nfa<S, A>
 where
-    S: Eq + Hash + Clone + Debug + Display,
-    A: Eq + Hash + Clone + Debug + Display,
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
 {
     /// States
     states: HashSet<S>,
@@ -36,8 +36,8 @@ where
 #[allow(dead_code)]
 impl<S, A> Nfa<S, A>
 where
-    S: Eq + Hash + Clone + Debug + Display,
-    A: Eq + Hash + Clone + Debug + Display,
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
 {
     /// Creates an empty NFA with no states, nor transitions.
     pub fn new() -> Self {

@@ -28,8 +28,8 @@ impl<S, A> Path<S, A> {
 /// states. The pair (out_transition, reached_state) is called `path`.
 pub struct Language<S, A>
 where
-    S: Eq + Hash + Clone + Debug + Display,
-    A: Eq + Hash + Clone + Debug + Display,
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
 {
     loops: HashSet<A>,
     paths: Vec<Path<S, A>>,
@@ -37,8 +37,8 @@ where
 
 impl<S, A> Language<S, A>
 where
-    S: Eq + Hash + Clone + Debug + Display,
-    A: Eq + Hash + Clone + Debug + Display,
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
 {
     pub fn new() -> Self {
         Language {
@@ -107,110 +107,42 @@ where
     }
 }
 
-/* Old implementation
-pub fn calc_right_language<S, A>(rev_nfa: &Nfa<S, A>) -> HashMap<S, Language<S, A>>
+/// Calculates the right language of an nfa.
+pub fn calc_right_language<S, A>(nfa: &Nfa<S, A>) -> HashMap<S, Language<S, A>>
 where
     S: Eq + Hash + Clone + Debug + Display,
     A: Eq + Hash + Clone + Debug + Display,
 {
     let mut languages = HashMap::new();
     let mut added = HashSet::new();
-    for state in rev_nfa.states() {
+    for state in nfa.states() {
         languages.insert(state.to_owned(), Language::new());
     }
 
     let mut states = VecDeque::new();
-    for state in rev_nfa.initial_states() {
+    for state in nfa.initial_states() {
         states.push_back(state);
         added.insert(state.to_owned());
     }
 
     while let Some(state) = states.pop_front() {
-        for symbol in rev_nfa.symbols() {
-            let reached_states = rev_nfa.eval_symbol_from_state(state, symbol).unwrap();
+        let state_lang = languages.get_mut(state).unwrap();
+        for symbol in nfa.symbols() {
+            let reached_states = nfa.eval_symbol_from_state(state, symbol).unwrap();
 
             for other_state in reached_states {
                 if *other_state == *state {
-                    languages
-                        .get_mut(state)
-                        .unwrap()
-                        .push_loop(symbol.to_owned());
-                } else {
-                    let path = Path::new(symbol.to_owned(), state.to_owned());
-                    languages.get_mut(other_state).unwrap().push_path(path);
+                    state_lang.push_loop(symbol.to_owned());
                 }
+
+                let path = Path::new(symbol.to_owned(), other_state.to_owned());
+                state_lang.push_path(path);
 
                 if !added.contains(other_state) {
                     added.insert(other_state.to_owned());
                     states.push_back(other_state);
                 }
             }
-        }
-    }
-
-    // Each final state in `nfa` can accept as right language its self-loop
-    // by its own
-    for state in rev_nfa.initial_states() {
-        let state_lang = languages.get_mut(state).unwrap();
-        let loop_symbols = state_lang.loops().to_owned();
-        for symbol in loop_symbols {
-            let path = Path::new(symbol, state.to_owned());
-            state_lang.push_path(path);
-        }
-    }
-
-    languages
-}*/
-
-/// Calculates the right language of an nfa. Takes as input the revere nfa.
-pub fn calc_right_language<S, A>(rev_nfa: &Nfa<S, A>) -> HashMap<S, Language<S, A>>
-where
-    S: Eq + Hash + Clone + Debug + Display,
-    A: Eq + Hash + Clone + Debug + Display,
-{
-    let mut languages = HashMap::new();
-    let mut added = HashSet::new();
-    for state in rev_nfa.states() {
-        languages.insert(state.to_owned(), Language::new());
-    }
-
-    let mut states = VecDeque::new();
-    for state in rev_nfa.initial_states() {
-        states.push_back(state);
-        added.insert(state.to_owned());
-    }
-
-    while let Some(state) = states.pop_front() {
-        for symbol in rev_nfa.symbols() {
-            let reached_states = rev_nfa.eval_symbol_from_state(state, symbol).unwrap();
-
-            for other_state in reached_states {
-                if *other_state == *state {
-                    languages
-                        .get_mut(state)
-                        .unwrap()
-                        .push_loop(symbol.to_owned());
-                } else {
-                    let path = Path::new(symbol.to_owned(), other_state.to_owned());
-                    languages.get_mut(state).unwrap().push_path(path);
-                }
-
-                if !added.contains(other_state) {
-                    added.insert(other_state.to_owned());
-                    states.push_back(other_state);
-                }
-            }
-        }
-    }
-
-    // Each final state in `nfa` can accept as right language its self-loop
-    // by its own
-    for state in rev_nfa.final_states() {
-        let state_lang = languages.get_mut(state).unwrap();
-        let loop_symbols = state_lang.loops().to_owned();
-        for symbol in loop_symbols {
-            let path = Path::new(symbol, state.to_owned());
-            state_lang.push_path(path);
         }
     }
 
@@ -247,8 +179,8 @@ fn calc_relation_aux<S, A>(
     checked: &mut HashSet<S>,
     rel: &mut HashSet<(S, S)>,
 ) where
-    S: Eq + Hash + Clone + Debug + Display,
-    A: Eq + Hash + Clone + Debug + Display,
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
 {
     if checked.contains(state) {
         return;
@@ -256,7 +188,7 @@ fn calc_relation_aux<S, A>(
 
     checked.insert(state.to_owned());
 
-    // Initialization
+    // Preparation
     let state_lang = right_languages.get(state).unwrap();
 
     let mut non_suitable_container = HashSet::new();
@@ -272,6 +204,11 @@ fn calc_relation_aux<S, A>(
     // First cleaning: removing all states that clearly cannot be containers
     // for state
     for path in state_lang.paths() {
+        if path.reached_state == *state {
+            // Self-loop, ignore path
+            continue;
+        }
+        calc_relation_aux(nfa, right_languages, &path.reached_state, checked, rel);
         for other in nfa.states() {
             if non_suitable_container.contains(other) {
                 continue;
@@ -285,7 +222,6 @@ fn calc_relation_aux<S, A>(
                     continue;
                 }
 
-                calc_relation_aux(nfa, right_languages, &path.reached_state, checked, rel);
                 if path.reached_state != other_path.reached_state
                     && !rel
                         .contains(&(path.reached_state.clone(), other_path.reached_state.clone()))
@@ -293,13 +229,6 @@ fn calc_relation_aux<S, A>(
                     continue;
                 }
 
-                found = true;
-            }
-
-            // Solution to triangular problem
-            // If I'm reaching a state with a transition on a symbol for which
-            // the reached state has a self-loop, the path is included in the loop
-            if path.reached_state == *other && other_lang.loops.contains(&path.transition_symbol) {
                 found = true;
             }
 
@@ -314,7 +243,7 @@ fn calc_relation_aux<S, A>(
         }
     }
 
-    // Second cleaning: for each state that could be a container, checks if
+    // rel population: for each state that could be a container, checks if
     // state's self-loops corresponds to either self-loops of that other state
     // or out-transitions to states that contains state
     let mut waiting_contexts = Vec::new();
@@ -338,7 +267,7 @@ fn calc_relation_aux<S, A>(
     }
 
     // For each pair (reached_state, missing_self_loops) checks if reached_state
-    // has an out-transition towards a state that containes state for each
+    // has an out-transition towards a state that contains state for each
     // symbol in missing_self_loops
     for (reached_state, missing_self_loops) in waiting_contexts {
         let other_lang = right_languages.get(reached_state).unwrap();
