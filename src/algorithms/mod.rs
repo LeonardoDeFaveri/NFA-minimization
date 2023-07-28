@@ -6,6 +6,8 @@ use std::{
 
 pub mod minimization;
 
+use petgraph::prelude::DiGraphMap;
+
 use crate::nfa::Nfa;
 
 pub struct Path<S, A> {
@@ -422,6 +424,44 @@ where
 /// Given an nfa returns a set of all the states for which exists a path
 /// that begins and ends in them.
 fn find_if_loops<S, A>(nfa: &Nfa<S, A>) -> HashSet<S>
+where
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
+{
+    let mut loops = HashSet::new();
+
+    type PlaceHolder = usize;
+    let mut all_ph: HashMap<&S, PlaceHolder> = HashMap::new();
+    let mut all_states: HashMap<PlaceHolder, &S> = HashMap::new();
+    let mut graph = DiGraphMap::new();
+
+    for (ph, state) in nfa.states().iter().enumerate() {
+        graph.add_node(ph);
+        all_ph.insert(state, ph);
+        all_states.insert(ph, state);
+    }
+
+    for symbol in nfa.symbols() {
+        for source in nfa.states() {
+            for dest in nfa.eval_symbol_from_state(source, symbol).unwrap() {
+                graph.add_edge(all_ph[source], all_ph[dest], ());
+            }
+        }
+    }
+
+    let sccs = petgraph::algo::kosaraju_scc(&graph);
+    for scc in sccs {
+        if scc.len() > 1 {
+            for state in scc {
+                loops.insert(all_states[&state].to_owned());
+            }
+        }
+    }
+
+    loops
+}
+
+fn ffind_if_loops<S, A>(nfa: &Nfa<S, A>) -> HashSet<S>
 where
     S: Eq + Hash + Clone + Debug,
     A: Eq + Hash + Clone + Debug,
