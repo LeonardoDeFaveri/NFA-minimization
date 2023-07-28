@@ -155,6 +155,7 @@ where
 pub fn calc_relation<S, A>(
     nfa: &Nfa<S, A>,
     right_languages: &HashMap<S, Language<S, A>>,
+    sccs_table: &HashMap<A, HashMap<S, usize>>,
 ) -> HashSet<(S, S)>
 where
     S: Eq + Hash + Clone + Debug,
@@ -164,7 +165,7 @@ where
     let mut checked = HashSet::new();
 
     for state in nfa.states() {
-        calc_relation_aux(nfa, &right_languages, state, &mut checked, &mut rel);
+        calc_relation_aux(nfa, &right_languages, sccs_table, state, &mut checked, &mut rel);
     }
 
     rel
@@ -175,6 +176,7 @@ where
 fn calc_relation_aux<S, A>(
     nfa: &Nfa<S, A>,
     right_languages: &HashMap<S, Language<S, A>>,
+    sccs_table: &HashMap<A, HashMap<S, usize>>,
     state: &S,
     checked: &mut HashSet<S>,
     rel: &mut HashSet<(S, S)>,
@@ -208,7 +210,8 @@ fn calc_relation_aux<S, A>(
             // Self-loop, ignore path
             continue;
         }
-        calc_relation_aux(nfa, right_languages, &path.reached_state, checked, rel);
+        calc_relation_aux(nfa, right_languages, sccs_table, &path.reached_state, checked, rel);
+        let table_row = sccs_table.get(&path.transition_symbol).unwrap();
         for other in nfa.states() {
             if non_suitable_container.contains(other) {
                 continue;
@@ -221,6 +224,7 @@ fn calc_relation_aux<S, A>(
                 .unwrap()
             {
                 if path.reached_state == *other_state
+                    || table_row[&path.reached_state] == table_row[other]
                     || rel.contains(&(path.reached_state.clone(), other_state.clone()))
                 {
                     found = true;
@@ -284,6 +288,96 @@ fn calc_relation_aux<S, A>(
         // reached state can containe state, too
         if to_solve_count == 0 {
             rel.insert((state.to_owned(), reached_state.to_owned()));
+        }
+    }
+}
+
+pub fn calc_sccs_table<S, A>(nfa: &Nfa<S, A>) -> HashMap<A, HashMap<S, usize>>
+where
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
+{
+    let mut table = HashMap::new();
+
+    let mut stack = Vec::new();
+    let mut on_stack = HashSet::new();
+    let mut indexes = HashMap::new();
+    let mut low_links = HashMap::new();
+    let mut index = 0;
+
+    for symbol in nfa.symbols() {
+        table.insert(symbol.to_owned(), HashMap::new());
+        for state in nfa.states() {
+            if !indexes.contains_key(state) {
+                find_sccs(
+                    &nfa,
+                    state,
+                    symbol,
+                    &mut index,
+                    &mut indexes,
+                    &mut low_links,
+                    &mut stack,
+                    &mut on_stack,
+                    &mut table,
+                );
+            }
+        }
+        stack.clear();
+        on_stack.clear();
+        indexes.clear();
+        low_links.clear();
+        index = 0;
+    }
+
+    table
+}
+
+fn find_sccs<'a, S, A>(
+    nfa: &'a Nfa<S, A>,
+    state: &'a S,
+    symbol: &'a A,
+    index: &mut usize,
+    indexes: &mut HashMap<&'a S, usize>,
+    low_links: &mut HashMap<&'a S, usize>,
+    stack: &mut Vec<&'a S>,
+    on_stack: &mut HashSet<&'a S>,
+    table: &mut HashMap<A, HashMap<S, usize>>,
+) where
+    S: Eq + Hash + Clone + Debug,
+    A: Eq + Hash + Clone + Debug,
+{
+    indexes.insert(state, *index);
+    low_links.insert(state, *index);
+    *index += 1;
+    stack.push(state);
+    on_stack.insert(state);
+
+    for other in nfa.eval_symbol_from_state(state, symbol).unwrap() {
+        if !indexes.contains_key(other) {
+            find_sccs(
+                nfa, other, symbol, index, indexes, low_links, stack, on_stack, table,
+            );
+            let old = low_links[state];
+            if low_links[other] < old {
+                low_links.insert(state, indexes[other]);
+            }
+        } else if on_stack.contains(other) {
+            let old = low_links[state];
+            if indexes[other] < old {
+                low_links.insert(state, indexes[other]);
+            }
+        }
+    }
+
+    if low_links[state] == indexes[state] {
+        while let Some(s) = stack.pop() {
+            on_stack.remove(s);
+            let symbol_row = table.get_mut(symbol).unwrap();
+            symbol_row.insert(s.to_owned(), low_links[s]);
+
+            if s == state {
+                break;
+            }
         }
     }
 }
@@ -414,8 +508,8 @@ where
 
         for state in set {
             containers.insert(state.clone(), i);
-            is_initial = nfa.is_initial(&state).unwrap();
-            is_final = nfa.is_final(&state).unwrap();
+            is_initial |= nfa.is_initial(&state).unwrap();
+            is_final |= nfa.is_final(&state).unwrap();
         }
 
         if is_initial {

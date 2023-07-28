@@ -1,21 +1,21 @@
 digraph finite_state_machine {
-rankdir=LR;
-size="30,20";
-node [shape = point]; "dummy0"
-node [shape = circle]; "0";
-"dummy0" -> "0";
-node [shape = circle]; "1";
-node [shape = circle]; "2";
-node [shape = circle]; "3";
-node [shape = doublecircle]; "4";
- "0" -> "1" [label = "a"];
- "0" -> "2" [label = "a"];
- "0" -> "3" [label = "a"];
- "0" -> "4" [label = "b"];
- "1" -> "4" [label = "b"];
- "2" -> "4" [label = "b"];
- "3" -> "4" [label = "b"];
- "1" -> "1" [label = "a"];
- "2" -> "2" [label = "a"];
- "3" -> "3" [label = "a"];
+    rankdir=LR;
+    size="30,20";
+    node [shape = point]; "dummy0"
+    node [shape = circle]; "0";
+    "dummy0" -> "0";
+    node [shape = circle]; "1";
+    node [shape = circle]; "2";
+    node [shape = circle]; "3";
+    node [shape = doublecircle]; "4";
+    "0" -> "1" [label = "a"];
+    "0" -> "2" [label = "a"];
+    "0" -> "3" [label = "a"];
+    "0" -> "4" [label = "b"];
+    "1" -> "4" [label = "b"];
+    "2" -> "4" [label = "b"];
+    "3" -> "4" [label = "b"];
+    "1" -> "1" [label = "a"];
+    "2" -> "2" [label = "a"];
+    "3" -> "3" [label = "a"];
 }

@@ -8,7 +8,7 @@ use std::{
 use petgraph::prelude::DiGraphMap;
 
 use crate::{
-    algorithms::{self, calc_right_language, initialize_rel_table, Language, Path},
+    algorithms::{self, calc_right_language, initialize_rel_table, Language, Path, calc_sccs_table},
     nfa::Nfa,
 };
 
@@ -102,8 +102,11 @@ pub fn minimize(source_file: &str) -> Sizes {
     let right_language = calc_right_language(&nfa);
     let left_language = calc_right_language(&rev_nfa);
 
-    let right = algorithms::calc_relation(&nfa, &right_language);
-    let left = algorithms::calc_relation(&rev_nfa, &left_language);
+    let right_sccs_table = calc_sccs_table(&nfa);
+    let left_sccs_table = calc_sccs_table(&rev_nfa);
+
+    let right = algorithms::calc_relation(&nfa, &right_language, &right_sccs_table);
+    let left = algorithms::calc_relation(&rev_nfa, &left_language, &left_sccs_table);
     let table = initialize_rel_table(&nfa, &right, &left);
 
     // Minimize using only right equivalence classes
@@ -259,8 +262,11 @@ pub fn test_minimization(source_file: &str) -> Vec<usize> {
     println!("Left Language");
     print_language(&left_language);
 
-    let right = algorithms::calc_relation(&nfa, &right_language);
-    let left = algorithms::calc_relation(&rev_nfa, &left_language);
+    let right_sccs_table = calc_sccs_table(&nfa);
+    let left_sccs_table = calc_sccs_table(&rev_nfa);
+
+    let right = algorithms::calc_relation(&nfa, &right_language, &right_sccs_table);
+    let left = algorithms::calc_relation(&rev_nfa, &left_language, &left_sccs_table);
 
     let table = initialize_rel_table(&nfa, &right, &left);
     println!("\n(p, q)  \t| Right\t| Left\t| Loop(p)");
