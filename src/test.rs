@@ -4,7 +4,7 @@ use std::str::FromStr;
 #[test]
 fn general() {
     //let source_file = "tests/medium-9.gv";
-    let source_file = "mini_tests/nfa1.gv";
+    let source_file = "mini_tests/nfa9.gv";
     let source = std::fs::read_to_string(source_file).unwrap();
     let nfa = Nfa::from_str(&source).unwrap();
 
@@ -22,8 +22,13 @@ fn general() {
     let right_sccs_table = calc_sccs_table(&nfa);
     let left_sccs_table = calc_sccs_table(&rev_nfa);
 
+    print!(" - |");
+    for state in nfa.states() {
+        print!(" {state} |");
+    }
+    println!();
     for symbol in nfa.symbols() {
-        print!("| {symbol} |");
+        print!(" {symbol} |");
         let row = right_sccs_table.get(symbol).unwrap();
         for state in nfa.states() {
             let scc_id = row.get(state).unwrap();

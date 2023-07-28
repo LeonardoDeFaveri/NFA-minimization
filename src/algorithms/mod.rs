@@ -359,7 +359,7 @@ fn find_sccs<'a, S, A>(
             );
             let old = low_links[state];
             if low_links[other] < old {
-                low_links.insert(state, indexes[other]);
+                low_links.insert(state, low_links[other]);
             }
         } else if on_stack.contains(other) {
             let old = low_links[state];
