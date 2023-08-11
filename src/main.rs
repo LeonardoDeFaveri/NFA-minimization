@@ -2,6 +2,8 @@ use cli_table::{format::Justify, print_stdout, Cell, Style, Table};
 use std::io::Write;
 use utils::minimize;
 
+use crate::utils::read_rel;
+
 #[allow(dead_code)]
 mod algorithms;
 mod nfa;
@@ -12,21 +14,36 @@ mod utils;
 mod test;
 
 fn main() {
-    let tests: Vec<String> = match std::env::args_os().nth(1) {
+    let mut tests: Vec<String> = vec![];
+    let mut right_rels: Vec<String> = vec![];
+    let mut left_rels: Vec<String> = vec![];
+
+    /*let mut files: Vec<String> = */
+    match std::env::args_os().nth(1) {
         Some(path) => match std::fs::read_dir(&path) {
             Ok(content) => {
                 println!("Reading tests from {:?}", &path);
                 content
                     .filter(|entry| entry.is_ok())
                     .map(|entry| entry.unwrap().path())
-                    .filter(|entry| entry.extension().unwrap_or_default() == "gv")
-                    .map(|entry| match entry.to_str() {
-                        Some(path) => Some(path.to_string()),
-                        None => None,
-                    })
-                    .filter(|entry| entry.is_some())
-                    .map(|entry| entry.unwrap())
-                    .collect()
+                    .for_each(|entry| {
+                        let file_name = entry.to_str().unwrap().to_string();
+                        let extension = entry.extension().unwrap_or_default().to_str().unwrap();
+                        match extension {
+                            "gv" => tests.push(file_name),
+                            "right_rel" => right_rels.push(file_name),
+                            "left_rel" => left_rels.push(file_name),
+                            _ => {}
+                        };
+                    });
+                //.filter(|entry| entry.extension().unwrap_or_default() == "gv")
+                //.map(|entry| match entry.to_str() {
+                //    Some(path) => Some(path.to_string()),
+                //    None => None,
+                //})
+                //.filter(|entry| entry.is_some())
+                //.map(|entry| entry.unwrap())
+                //.collect()
             }
             Err(err) => {
                 eprintln!("Error while trying to read {:?}", &path);
@@ -40,17 +57,25 @@ fn main() {
         }
     };
 
+    tests.sort_by(|t1, t2| t1.cmp(&t2));
+    right_rels.sort_by(|t1, t2| t1.cmp(&t2));
+    left_rels.sort_by(|t1, t2| t1.cmp(&t2));
+
     let mut sizes = vec![];
     let tests_count = tests.len();
     for (i, path) in tests.iter().enumerate() {
+        let right_rel_path = right_rels.get(i).unwrap();
+        let left_rel_path = left_rels.get(i).unwrap();
+        let right_rel = read_rel(&right_rel_path);
+        let left_rel = read_rel(&left_rel_path);
         print!(
             "\rAnalyzing test: {:0>2}/{:0>2} [{:^30}]",
             i + 1,
             tests_count,
-            path
+            path,
         );
         let _ = std::io::stdout().flush();
-        sizes.push(minimize(path).as_vec());
+        sizes.push(minimize(path, right_rel, left_rel).as_vec());
     }
 
     sizes.sort_by(|a, b| a[0].cmp(&b[0]));

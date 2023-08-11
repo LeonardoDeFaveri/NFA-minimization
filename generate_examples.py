@@ -1,15 +1,76 @@
 from FAdo.cfg import REStringRGenerator, reGrammar
+from FAdo.fa import NFA, UnionFind
 import FAdo.reex as reex
 import math
 
 import io, os, sys, time
 
-avg = 0
+def generate_eq_rel(nfa: NFA):
+    bisimulation = nfa.autobisimulation2()
+    eq_sets = UnionFind(auto_create = True)
+    for i in range(len(nfa.States)):
+        eq_sets.make_set(i)
+    for i, j in bisimulation:
+        eq_sets.union(i, j)
+
+    rel = set()
+    for eq_set in eq_sets.get_sets().values():
+        for s1 in eq_set:
+            for s2 in eq_set:
+                if s1 != s2:
+                    rel.add((s1, s2))
+                    rel.add((s2, s1))
+    return rel
+
+def rel_str(rel):
+    res = ''
+    for i, j in rel:
+        res += f'{i} {j}\n'
+    return res
+
+def generate_single_example(regex, file_name):
+    regExp: reex.RegExp = reex.str2regexp(regex)
+    nfa: NFA = regExp.nfaPosition()
+
+    #nfa: NFA = NFA()
+    #nfa.States = range(0, 4)
+    #nfa.addFinal(3)
+    #nfa.setInitial([0])
+    #nfa.setSigma = ['a', 'b']
+    #nfa.addTransition(0, 'a', 1)
+    #nfa.addTransition(1, 'a', 2)
+    #nfa.addTransition(2, 'a', 0)
+    #nfa.addTransition(0, 'b', 3)
+    #nfa.addTransition(1, 'b', 3)
+    #nfa.addTransition(2, 'b', 3)
+
+    right_rel = generate_eq_rel(nfa)
+    left_rel = generate_eq_rel(nfa.reversal())
+    nfa.display(file_name)
+    out = io.open(f'{file_name}.right_rel', 'w')
+    out.write(rel_str(right_rel))
+    out.close()
+    out = io.open(f'{file_name}.left_rel', 'w')
+    out.write(rel_str(left_rel))
+    out.close()
+
+    r_nfa = nfa.rEquivNFA()
+    lr_nfa = r_nfa.lEquivNFA()
+    del r_nfa
+    lr_nfa.display('RL1')
+
+    l_nfa = nfa.lEquivNFA()
+    lr_nfa = l_nfa.rEquivNFA()
+    del l_nfa
+    lr_nfa.display('LR1')
+
+    min_nfa = nfa.lrEquivNFA()
+    min_nfa.display('min')
+
+#generate_single_example('(aaa)*(aab+ab+b)', 'p')
+#os.abort()
 
 grammars = {
-    'g_mine': [
-        
-    ],
     'g_finite_base': [
         "Tr -> Tr + Tc | Tc",
         "Tc -> Tc Ts |  Ts",
@@ -65,10 +126,6 @@ def generate_example(alphabet_size: int, word_size: int, op_density = 0.2, cut_l
         if len(nfa.States) < cut_lower_than:
             continue
 
-        #min_nfa = nfa.lrEquivNFA()
-        #global avg
-        #avg += (len(nfa.States) - len(min_nfa.States)) / len(nfa.States)
-        #print(f'NFA: {len(nfa.States)} | MIN: {len(min_nfa.States)}')
         return nfa
 
 # Generates:
@@ -82,6 +139,7 @@ if len(sys.argv) > 1:
     tests_folder = sys.argv[1]
 # Makes sure the folder exists
 os.makedirs(tests_folder, exist_ok = True)
+total_index = 1
 
 print(f"Generating examples (into `{tests_folder}`)...")
 start = time.time()
@@ -90,47 +148,93 @@ print("Generaing small nfas:\t 00/15", end = '')
 sys.stdout.flush()
 for i in range(1, 15 + 1):
     nfa = generate_example(10, 25, 0.4)
-    out = io.open(f'{tests_folder}/small-{i}.gv', 'w')
+    out = io.open(f'{tests_folder}/{total_index:0>2}-small-{i}.gv', 'w')
     out.write(nfa.dotFormat())
     out.close()
+
+    rel = generate_eq_rel(nfa)
+    out = io.open(f'{tests_folder}/{total_index:0>2}-small-{i}.right_rel', 'w')
+    out.write(rel_str(rel))
+    out.close()
+
+    rel = generate_eq_rel(nfa.reversal())
+    out = io.open(f'{tests_folder}/{total_index:0>2}-small-{i}.left_rel', 'w')
+    out.write(rel_str(rel))
+    out.close()
+
     print(f"\b\b\b\b\b{i:0>2}/15", end = '')
     sys.stdout.flush()
+    total_index += 1
 
 print()
 print("Generaing medium nfas:\t 00/15", end = '')
 sys.stdout.flush()
 for i in range(1, 15 + 1):
     nfa = generate_example(15, 50, 0.35, 10)
-    out = io.open(f'{tests_folder}/medium-{i}.gv', 'w')
+    out = io.open(f'{tests_folder}/{total_index:0>2}-medium-{i}.gv', 'w')
     out.write(nfa.dotFormat())
     out.close()
+
+    rel = generate_eq_rel(nfa)
+    out = io.open(f'{tests_folder}/{total_index:0>2}-medium-{i}.right_rel', 'w')
+    out.write(rel_str(rel))
+    out.close()
+
+    rel = generate_eq_rel(nfa.reversal())
+    out = io.open(f'{tests_folder}/{total_index:0>2}-medium-{i}.left_rel', 'w')
+    out.write(rel_str(rel))
+    out.close()
+
     print(f"\b\b\b\b\b{i:0>2}/15", end = '')
     sys.stdout.flush()
+    total_index += 1
 
 print()
 print("Generaing large nfas:\t 00/15", end = '')
 sys.stdout.flush()
 for i in range(1, 15 + 1):
     nfa = generate_example(20, 100, 0.25, 25)
-    out = io.open(f'{tests_folder}/large-{i}.gv', 'w')
+    out = io.open(f'{tests_folder}/{total_index:0>2}-large-{i}.gv', 'w')
     out.write(nfa.dotFormat())
     out.close()
+
+    rel = generate_eq_rel(nfa)
+    out = io.open(f'{tests_folder}/{total_index:0>2}-large-{i}.right_rel', 'w')
+    out.write(rel_str(rel))
+    out.close()
+
+    rel = generate_eq_rel(nfa.reversal())
+    out = io.open(f'{tests_folder}/{total_index:0>2}-large-{i}.left_rel', 'w')
+    out.write(rel_str(rel))
+    out.close()
+
     print(f"\b\b\b\b\b{i:0>2}/15", end = '')
     sys.stdout.flush()
+    total_index += 1
 
 print()
 print("Generaing huge nfas:\t 00/15", end = '')
 sys.stdout.flush()
 for i in range(1, 15 + 1):
     nfa = generate_example(25, 500, 0.1, 40)
-    out = io.open(f'{tests_folder}/huge-{i}.gv', 'w')
+    out = io.open(f'{tests_folder}/{total_index:0>2}-huge-{i}.gv', 'w')
     out.write(nfa.dotFormat())
     out.close()
+
+    rel = generate_eq_rel(nfa)
+    out = io.open(f'{tests_folder}/{total_index:0>2}-huge-{i}.right_rel', 'w')
+    out.write(rel_str(rel))
+    out.close()
+
+    rel = generate_eq_rel(nfa.reversal())
+    out = io.open(f'{tests_folder}/{total_index:0>2}-huge-{i}.left_rel', 'w')
+    out.write(rel_str(rel))
+    out.close()
+
     print(f"\b\b\b\b\b{i:0>2}/15", end = '')
     sys.stdout.flush()
+    total_index += 1
 
 end = time.time()
 print()
 print(f'Example generation completed in {end - start:.3f} secods')
-
-print(f'Avg reduction: {avg / 60}%')
