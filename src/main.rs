@@ -95,6 +95,7 @@ fn main() {
             "SCCs2",
             "Left SCCs",
             "Right SCCs",
+            "Right-Left SCCs",
             "All SCCs",
         ],
     );
@@ -146,7 +147,7 @@ fn print_results(sizes: &Vec<Vec<usize>>, titles: Vec<&str>) {
         "Res".cell().justify(Justify::Center).italic(true),
         "-".cell().justify(Justify::Center).italic(true),
     ];
-    for red in &avg_red[..avg_red.len() - 3] {
+    for red in &avg_red[..avg_red.len() - 4] {
         let red_str = format!("{:.3}%", red);
         summary_row.push(red_str.cell().justify(Justify::Center).italic(true));
     }

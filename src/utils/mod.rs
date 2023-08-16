@@ -22,7 +22,7 @@ pub struct Sizes {
     pub reason: usize,
     pub sccs: usize,
     pub sccs2: usize,
-    pub sccs_count: (usize, usize, usize),
+    pub sccs_count: (usize, usize, usize, usize),
 }
 
 impl Sizes {
@@ -39,6 +39,7 @@ impl Sizes {
             self.sccs_count.0,
             self.sccs_count.1,
             self.sccs_count.2,
+            self.sccs_count.3,
         ]
     }
 }
@@ -54,7 +55,7 @@ impl Default for Sizes {
             reason: 0,
             sccs: 0,
             sccs2: 0,
-            sccs_count: (0, 0, 0),
+            sccs_count: (0, 0, 0, 0),
         }
     }
 }
@@ -207,12 +208,14 @@ where
 pub fn count_sccs<S>(
     states: &HashSet<S>,
     rel_table: &HashMap<(S, S), (bool, bool, bool)>,
-) -> (usize, usize, usize)
+) -> (usize, usize, usize, usize)
 where
     S: Eq + Hash + Clone,
 {
     type PlaceHolder = usize;
     let mut all_ph: HashMap<&S, PlaceHolder> = HashMap::new();
+    let mut all_states: HashMap<PlaceHolder, &S> = HashMap::new();
+    let mut graph_rl: DiGraphMap<PlaceHolder, ()> = DiGraphMap::new();
     let mut graph_all: DiGraphMap<PlaceHolder, ()> = DiGraphMap::new();
     let mut graph_right: DiGraphMap<PlaceHolder, ()> = DiGraphMap::new();
     let mut graph_left: DiGraphMap<PlaceHolder, ()> = DiGraphMap::new();
@@ -221,27 +224,34 @@ where
         graph_right.add_node(ph);
         graph_left.add_node(ph);
         all_ph.insert(state, ph);
+        all_states.insert(ph, state);
     }
 
-    for ((p, q), (right, left, _)) in rel_table {
+    for ((p, q), (right, left, l)) in rel_table {
         let p_ph = all_ph[&p];
         let q_ph = all_ph[&q];
 
         if *right {
             graph_right.add_edge(p_ph, q_ph, ());
+            graph_rl.add_edge(p_ph, q_ph, ());
             graph_all.add_edge(p_ph, q_ph, ());
         }
         if *left {
             graph_left.add_edge(p_ph, q_ph, ());
+            graph_rl.add_edge(p_ph, q_ph, ());
             graph_all.add_edge(p_ph, q_ph, ());
+        }
+        if *right && *left && !*l {
+            graph_all.add_edge(q_ph, p_ph, ());
         }
     }
 
     let sccs_right = petgraph::algo::kosaraju_scc(&graph_right);
     let sccs_left = petgraph::algo::kosaraju_scc(&graph_left);
+    let sccs_rl = petgraph::algo::kosaraju_scc(&graph_rl);
     let sccs_all = petgraph::algo::kosaraju_scc(&graph_all);
 
-    (sccs_left.len(), sccs_right.len(), sccs_all.len())
+    (sccs_left.len(), sccs_right.len(), sccs_rl.len(), sccs_all.len())
 }
 
 pub fn read_rel(source_file: &str) -> HashSet<(String, String)> {
@@ -330,5 +340,11 @@ pub fn test_minimization(
     save_as(&min_pre1, "minimized/pre_priority");
     //print_equivalence_classes("Preorder1 Equivalence classes", &res);
 
+    let sccs_count = count_sccs(nfa.states(), &table);
+
+    sizes.push(sccs_count.0);
+    sizes.push(sccs_count.1);
+    sizes.push(sccs_count.2);
+    sizes.push(sccs_count.3);
     sizes
 }

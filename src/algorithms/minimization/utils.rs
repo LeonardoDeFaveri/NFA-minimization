@@ -13,10 +13,10 @@ pub type PlaceHolder = usize;
 /// - All edges of type `(other, old_node)` are removed and `(other, new_node)`
 ///     is added to `to_add_in`;
 /// - All edges of type `(old_node, other)` are removed and `to_add_out` is updated
-///     so that it counts how many times and edge that goes into `old_node` is found.
+///     so that it counts how many times an edge that goes into `old_node` is found.
 ///
 /// After the call, it is safe to add every edge in `to_add_in` to `graph`, while
-/// for each pair `(source, count)`, and edge `(new_node, source)` can be added
+/// for each pair `(source, count)`, an edge `(new_node, source)` can be added
 /// to `graph` only if `count == scc.len()`.
 ///
 /// NOTE:
@@ -36,7 +36,7 @@ pub fn update_graph(
 ) {
     let mut to_remove = HashSet::new();
 
-    // Manages edges of type (old_node, other)
+    // Manages edges of type (other, old_node)    
     for (source, dest, _) in graph.edges_directed(old_node, Direction::Incoming) {
         if !scc.contains(&source) {
             to_add_in.insert((source, new_node));
@@ -44,7 +44,7 @@ pub fn update_graph(
         to_remove.insert((source, dest));
     }
 
-    // Manages edges of type (other, old_node)
+    // Manages edges of type (old_node, other)
     for (source, dest, _) in graph.edges_directed(old_node, Direction::Outgoing) {
         if !scc.contains(&dest) {
             let counter = to_add_out.entry(dest).or_default();

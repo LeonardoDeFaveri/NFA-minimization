@@ -22,6 +22,8 @@ fn general() {
     println!("Left Language");
     print_language(&left_language);
 
+    //let mut right = HashSet::new();
+    //let mut left = HashSet::new();
     calc_relation(&nfa, &right_language, &mut right);
     calc_relation(&rev_nfa, &left_language, &mut left);
 
@@ -36,13 +38,24 @@ fn general() {
         );
     }
 
+    let mut sizes = Vec::new();
+
     let res = minimization::preorders_with_sccs(nfa.states(), &table);
+    sizes.push(res.len());
     print_equivalence_classes("SCCs", &res);
     let min = build_minimized(&nfa, &res);
     save_as(&min, "scc");
 
     let res = minimization::preorders_with_sccs2(nfa.states(), &table);
+    sizes.push(res.len());
     print_equivalence_classes("SCCs2", &res);
     let min = build_minimized(&nfa, &res);
     save_as(&min, "scc2");
+
+    let sccs_count = count_sccs(nfa.states(), &table);
+    sizes.push(sccs_count.0);
+    sizes.push(sccs_count.1);
+    sizes.push(sccs_count.2);
+
+    println!("{:?}", sizes);
 }
