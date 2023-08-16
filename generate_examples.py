@@ -93,10 +93,9 @@ algorithm. `alphabet_size` defines the number of symbols of the vocabulary,
 `word_size` defines the length of the regular expression. `op_density` is a
 value in (0, 1) that defines how many operators there should be in the regular
 expression. A value of `0` would produce a regex made of just alphabet symbols,
-while a value of `1` would produce a regex made of just operators. `cut_lower_than`
-discards all nfas that don't have that minimum number of states
+while a value of `1` would produce a regex made of just operators.
 """
-def generate_example(alphabet_size: int, word_size: int, op_density = 0.2, cut_lower_than = 3):
+def generate_example(alphabet_size: int, word_size: int, op_density = 0.2):
     if alphabet_size <= 0 or word_size <= 0:
         return None
     
@@ -122,11 +121,25 @@ def generate_example(alphabet_size: int, word_size: int, op_density = 0.2, cut_l
     
         regExp: reex.RegExp = reex.str2regexp(regex)
         nfa = regExp.nfaPosition()
-    
-        if len(nfa.States) < cut_lower_than:
-            continue
 
         return nfa
+
+def generate_and_save_example(alphabet_size: int, word_size: int, op_density, file_name):
+    nfa = generate_example(alphabet_size, word_size, op_density)
+    out = io.open(f'{tests_folder}/{file_name}.gv', 'w')
+    out.write(nfa.dotFormat())
+    out.close()
+
+    rel = generate_eq_rel(nfa)
+    out = io.open(f'{tests_folder}/{file_name}.right_rel', 'w')
+    out.write(rel_str(rel))
+    out.close()
+
+    rel = generate_eq_rel(nfa.reversal())
+    out = io.open(f'{tests_folder}/{file_name}.left_rel', 'w')
+    out.write(rel_str(rel))
+    out.close()
+
 
 # Generates:
 # 15 small nfas: 10, 25
@@ -144,94 +157,41 @@ total_index = 1
 print(f"Generating examples (into `{tests_folder}`)...")
 start = time.time()
 
-print("Generaing small nfas:\t 00/15", end = '')
+count = 60
+print("Generaing small nfas:\t 00/{count}", end = '')
 sys.stdout.flush()
-for i in range(1, 15 + 1):
-    nfa = generate_example(10, 25, 0.4)
-    out = io.open(f'{tests_folder}/{total_index:0>2}-small-{i}.gv', 'w')
-    out.write(nfa.dotFormat())
-    out.close()
+for i in range(1, count + 1):
+    generate_and_save_example(1, 25, 0.4, f'{total_index:0>2}-small-{i}')
+    print(f"\b\b\b\b\b{i:0>2}/{count}", end = '')
+    sys.stdout.flush()
+    total_index += 1
 
-    rel = generate_eq_rel(nfa)
-    out = io.open(f'{tests_folder}/{total_index:0>2}-small-{i}.right_rel', 'w')
-    out.write(rel_str(rel))
-    out.close()
-
-    rel = generate_eq_rel(nfa.reversal())
-    out = io.open(f'{tests_folder}/{total_index:0>2}-small-{i}.left_rel', 'w')
-    out.write(rel_str(rel))
-    out.close()
-
-    print(f"\b\b\b\b\b{i:0>2}/15", end = '')
+count = 15
+print()
+print("Generaing medium nfas:\t 00/{count}", end = '')
+sys.stdout.flush()
+for i in range(1, count + 1):
+    generate_and_save_example(15, 50, 0.35, f'{total_index:0>2}-medium-{i}')
+    print(f"\b\b\b\b\b{i:0>2}/{count}", end = '')
     sys.stdout.flush()
     total_index += 1
 
 print()
-print("Generaing medium nfas:\t 00/15", end = '')
+print("Generaing large nfas:\t 00/{count}", end = '')
 sys.stdout.flush()
-for i in range(1, 15 + 1):
-    nfa = generate_example(15, 50, 0.35, 10)
-    out = io.open(f'{tests_folder}/{total_index:0>2}-medium-{i}.gv', 'w')
-    out.write(nfa.dotFormat())
-    out.close()
-
-    rel = generate_eq_rel(nfa)
-    out = io.open(f'{tests_folder}/{total_index:0>2}-medium-{i}.right_rel', 'w')
-    out.write(rel_str(rel))
-    out.close()
-
-    rel = generate_eq_rel(nfa.reversal())
-    out = io.open(f'{tests_folder}/{total_index:0>2}-medium-{i}.left_rel', 'w')
-    out.write(rel_str(rel))
-    out.close()
-
-    print(f"\b\b\b\b\b{i:0>2}/15", end = '')
+for i in range(1, count + 1):
+    nfa = generate_example(20, 100, 0.25)
+    generate_and_save_example(20, 100, 0.25, f'{total_index:0>2}-large-{i}')
+    print(f"\b\b\b\b\b{i:0>2}/{count}", end = '')
     sys.stdout.flush()
     total_index += 1
 
 print()
-print("Generaing large nfas:\t 00/15", end = '')
+print("Generaing huge nfas:\t 00/{count}", end = '')
 sys.stdout.flush()
-for i in range(1, 15 + 1):
-    nfa = generate_example(20, 100, 0.25, 25)
-    out = io.open(f'{tests_folder}/{total_index:0>2}-large-{i}.gv', 'w')
-    out.write(nfa.dotFormat())
-    out.close()
-
-    rel = generate_eq_rel(nfa)
-    out = io.open(f'{tests_folder}/{total_index:0>2}-large-{i}.right_rel', 'w')
-    out.write(rel_str(rel))
-    out.close()
-
-    rel = generate_eq_rel(nfa.reversal())
-    out = io.open(f'{tests_folder}/{total_index:0>2}-large-{i}.left_rel', 'w')
-    out.write(rel_str(rel))
-    out.close()
-
-    print(f"\b\b\b\b\b{i:0>2}/15", end = '')
-    sys.stdout.flush()
-    total_index += 1
-
-print()
-print("Generaing huge nfas:\t 00/15", end = '')
-sys.stdout.flush()
-for i in range(1, 15 + 1):
-    nfa = generate_example(25, 500, 0.1, 40)
-    out = io.open(f'{tests_folder}/{total_index:0>2}-huge-{i}.gv', 'w')
-    out.write(nfa.dotFormat())
-    out.close()
-
-    rel = generate_eq_rel(nfa)
-    out = io.open(f'{tests_folder}/{total_index:0>2}-huge-{i}.right_rel', 'w')
-    out.write(rel_str(rel))
-    out.close()
-
-    rel = generate_eq_rel(nfa.reversal())
-    out = io.open(f'{tests_folder}/{total_index:0>2}-huge-{i}.left_rel', 'w')
-    out.write(rel_str(rel))
-    out.close()
-
-    print(f"\b\b\b\b\b{i:0>2}/15", end = '')
+for i in range(1, count + 1):
+    generate_and_save_example(25, 500, 0.1, f'{total_index:0>2}-huge-{i}')
+    print(f"\b\b\b\b\b{i:0>2}/{count}", end = '')
     sys.stdout.flush()
     total_index += 1
 

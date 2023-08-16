@@ -20,8 +20,7 @@ pub struct Sizes {
     pub right_left_eq: usize,
     pub left_right_eq: usize,
     pub reason: usize,
-    pub sccs: usize,
-    pub sccs2: usize,
+    pub sccs: (usize, usize, usize, usize),
     pub sccs_count: (usize, usize, usize, usize),
 }
 
@@ -34,8 +33,10 @@ impl Sizes {
             self.right_left_eq,
             self.left_right_eq,
             self.reason,
-            self.sccs,
-            self.sccs2,
+            self.sccs.0,
+            self.sccs.1,
+            self.sccs.2,
+            self.sccs.3,
             self.sccs_count.0,
             self.sccs_count.1,
             self.sccs_count.2,
@@ -53,8 +54,7 @@ impl Default for Sizes {
             right_left_eq: 0,
             left_right_eq: 0,
             reason: 0,
-            sccs: 0,
-            sccs2: 0,
+            sccs: (0, 0, 0, 0),
             sccs_count: (0, 0, 0, 0),
         }
     }
@@ -136,8 +136,14 @@ pub fn minimize(
     let res = algorithms::minimization::preorders_with_sccs(nfa.states(), &table);
     let sccs = res.len();
 
-    let res = algorithms::minimization::preorders_with_sccs2(nfa.states(), &table);
-    let sccs2 = res.len();
+    let res = algorithms::minimization::preorders_with_sccs_right(nfa.states(), &table);
+    let sccs_right = res.len();
+
+    let res = algorithms::minimization::preorders_with_sccs_left(nfa.states(), &table);
+    let sccs_left = res.len();
+
+    let res = algorithms::minimization::preorders_with_sccs_pre(nfa.states(), &table);
+    let sccs_pre = res.len();
 
     let sccs_count = count_sccs(nfa.states(), &table);
 
@@ -148,8 +154,7 @@ pub fn minimize(
         right_left_eq,
         left_right_eq,
         reason,
-        sccs,
-        sccs2,
+        sccs: (sccs, sccs_right, sccs_left, sccs_pre),
         sccs_count,
     }
 }

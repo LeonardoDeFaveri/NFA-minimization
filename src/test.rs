@@ -46,7 +46,7 @@ fn general() {
     let min = build_minimized(&nfa, &res);
     save_as(&min, "scc");
 
-    let res = minimization::preorders_with_sccs2(nfa.states(), &table);
+    let res = minimization::preorders_with_sccs_pre(nfa.states(), &table);
     sizes.push(res.len());
     print_equivalence_classes("SCCs2", &res);
     let min = build_minimized(&nfa, &res);
