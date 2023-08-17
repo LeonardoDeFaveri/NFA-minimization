@@ -1,0 +1,48 @@
+digraph finite_state_machine {
+rankdir=LR;
+size="20,20";
+node [shape = point]; "dummy0"
+node [shape = circle]; "0";
+"dummy0" -> "0";
+node [shape = doublecircle]; "1";node [shape = doublecircle]; "2";node [shape = circle]; "3";
+node [shape = doublecircle]; "4";node [shape = doublecircle]; "5";node [shape = circle]; "6";
+node [shape = doublecircle]; "7";node [shape = circle]; "8";
+node [shape = doublecircle]; "9";node [shape = doublecircle]; "10";node [shape = doublecircle]; "11";node [shape = doublecircle]; "12";"0" -> "1" [label = "h"];
+ "0" -> "2" [label = "a"];
+ "0" -> "3" [label = "i"];
+ "3" -> "4" [label = "j"];
+ "1" -> "5" [label = "e"];
+ "1" -> "6" [label = "f"];
+ "1" -> "7" [label = "j"];
+ "1" -> "8" [label = "d"];
+ "1" -> "9" [label = "i"];
+ "9" -> "9" [label = "i"];
+ "9" -> "10" [label = "e"];
+ "9" -> "6" [label = "f"];
+ "9" -> "7" [label = "j"];
+ "9" -> "8" [label = "d"];
+ "10" -> "10" [label = "e"];
+ "10" -> "9" [label = "i"];
+ "10" -> "6" [label = "f"];
+ "10" -> "7" [label = "j"];
+ "10" -> "8" [label = "d"];
+ "8" -> "11" [label = "c"];
+ "11" -> "8" [label = "d"];
+ "11" -> "6" [label = "f"];
+ "11" -> "7" [label = "j"];
+ "11" -> "9" [label = "i"];
+ "7" -> "7" [label = "j"];
+ "7" -> "6" [label = "f"];
+ "7" -> "8" [label = "d"];
+ "7" -> "9" [label = "i"];
+ "6" -> "12" [label = "b"];
+ "12" -> "6" [label = "f"];
+ "12" -> "7" [label = "j"];
+ "12" -> "8" [label = "d"];
+ "12" -> "9" [label = "i"];
+ "5" -> "5" [label = "e"];
+ "5" -> "6" [label = "f"];
+ "5" -> "7" [label = "j"];
+ "5" -> "8" [label = "d"];
+ "5" -> "9" [label = "i"];
+ }

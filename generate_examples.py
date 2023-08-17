@@ -141,60 +141,59 @@ def generate_and_save_example(alphabet_size: int, word_size: int, op_density, fi
     out.close()
 
 
-# Generates:
-# 15 small nfas: 10, 25
-# 15 medium nfas: 15, 50
-# 15 large nfas: 20, 100
-# 15 huge nfas: 25, 500
+# Small:    word_size = 25, op_density = 0.4
+# Medium:   word_size = 50, op_density = 0.35
+# Large:    word_size = 100, op_density = 0.25
+# Huge:     word_size = 500, op_density = 0.1
 
-tests_folder = 'tests'
-if len(sys.argv) > 1:
-    tests_folder = sys.argv[1]
+gen_parameters = ['tests', 60, 1]
+for index, value in enumerate(sys.argv):
+    if index == 0:
+        continue
+    gen_parameters[index - 1] = value
+
+tests_folder = gen_parameters[0]
+count = int(gen_parameters[1])
+alphabet_size = int(gen_parameters[2])
+
 # Makes sure the folder exists
 os.makedirs(tests_folder, exist_ok = True)
-total_index = 1
 
-print(f"Generating examples (into `{tests_folder}`)...")
+print(f'Parameters:\n\tNFA count per tipe: {count}\n\tAlphabet size: {alphabet_size}')
+print(f'Generating examples (into `{tests_folder}`)...')
 start = time.time()
 
-count = 60
-print("Generaing small nfas:\t 00/{count}", end = '')
+print(f'Generating small nfas:\t 00/{count}', end = '')
 sys.stdout.flush()
 for i in range(1, count + 1):
-    generate_and_save_example(1, 25, 0.4, f'{total_index:0>2}-small-{i}')
+    generate_and_save_example(alphabet_size, 25, 0.4, f'small/{alphabet_size}/{i:0>3}')
     print(f"\b\b\b\b\b{i:0>2}/{count}", end = '')
     sys.stdout.flush()
-    total_index += 1
-
-count = 15
-print()
-print("Generaing medium nfas:\t 00/{count}", end = '')
-sys.stdout.flush()
-for i in range(1, count + 1):
-    generate_and_save_example(15, 50, 0.35, f'{total_index:0>2}-medium-{i}')
-    print(f"\b\b\b\b\b{i:0>2}/{count}", end = '')
-    sys.stdout.flush()
-    total_index += 1
 
 print()
-print("Generaing large nfas:\t 00/{count}", end = '')
+print(f'Generating medium nfas:\t 00/{count}', end = '')
 sys.stdout.flush()
 for i in range(1, count + 1):
-    nfa = generate_example(20, 100, 0.25)
-    generate_and_save_example(20, 100, 0.25, f'{total_index:0>2}-large-{i}')
+    generate_and_save_example(alphabet_size, 50, 0.35, f'medium/{alphabet_size}/{i:0>3}')
     print(f"\b\b\b\b\b{i:0>2}/{count}", end = '')
     sys.stdout.flush()
-    total_index += 1
 
 print()
-print("Generaing huge nfas:\t 00/{count}", end = '')
+print(f'Generating large nfas:\t 00/{count}', end = '')
 sys.stdout.flush()
 for i in range(1, count + 1):
-    generate_and_save_example(25, 500, 0.1, f'{total_index:0>2}-huge-{i}')
+    generate_and_save_example(alphabet_size, 100, 0.25, f'large/{alphabet_size}/{i:0>3}')
     print(f"\b\b\b\b\b{i:0>2}/{count}", end = '')
     sys.stdout.flush()
-    total_index += 1
+
+print()
+print(f'Generating huge nfas:\t 00/{count}', end = '')
+sys.stdout.flush()
+for i in range(1, count + 1):
+    generate_and_save_example(alphabet_size, 500, 0.1, f'huge/{alphabet_size}/{i:0>3}')
+    print(f"\b\b\b\b\b{i:0>2}/{count}", end = '')
+    sys.stdout.flush()
 
 end = time.time()
 print()
-print(f'Example generation completed in {end - start:.3f} secods')
+print(f'Example generation completed in {end - start:.3f} seconds')

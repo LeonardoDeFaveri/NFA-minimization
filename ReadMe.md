@@ -1,34 +1,37 @@
-# Correzioni e aggiunte
-1. Generatore di esempi (python)
-2. Generazione di NFA a partire da file `.gv` (dot notation)
-3. Implementazione minimizzazione con classi di equivalenze (destra,
-sinistra, destra-sinistra, sinistra-destra)
-4. Realizzata una struttura ausiliaria per l'utilizzo dei preordini
+# NFA minimization using preorder and strongly connected components on dependency graphs
+Here algorithms for preorders calculation and usage are presented,
+along with a suite for testing and comparing results with minimization
+approaches based on equivalences.
 
-## 1. Generazione di esempi
-Data la dimensione `alphabet_size` dell'alfabeto e una dimensione
-`word_size` produce un'NFA casuale. L'NFA è ottenuto a partire da
-un'espressione regolare per costruzione di un automa posizionale.
-L'esrepssione regolare usa un vocabolario del tipo `{a, ..., z, aa,
-..., zz}`. L'automa ottenuto non contiene transizioni per epsilon.
+## Minimization algorithms
+The minimization algorithm provided are:
+* For equivalences:
+    * `right_eq`: for minimization using only right equivalences
+    * `right_left_eq`: for minimization using right and then left
+    equivalences
+* For preorders:
+    * `preorders_with_sccs`: for minimization using SCC merging on 3
+    dependency graphs
+    * `preorders_with_sccs_right`: as above, but priority is given to
+    SCCs found in the dependency graph associated to right preorders
+    (so, for states that can be merged using rule 1 of states merging
+    rules using preorders)
+    * `preorders_with_sccs_left`: as above, but priority is given to
+    rule 2
+    * `preorders_with_sccs_pre`: as above, but priority is given to
+    rule 3
 
-## 2. Generazione di NFA a partire da file `.gv`
-Sfruttando il parser `graphviz-rust` viene letto un file `.gv` producendo
-una rappresentazione intermedia da cui viene poi generato un `Nfa` come
-definito in `nfa/mod.rs`.
+#### NOTE
+Left and left-right equivalences can be used in minimization
+algorithms, by simply providing the reversed automaton and the
+correct relations.
 
-## 3. Implementazione algoritmi di minimizzazione con classi di equivalenza
-Per poter confrontare le performance di futuri algoritmi di
-minimizzazione con preordini sono stati implementati algoritmi di
-minimizzazione con classi di equivalenza: destra, sinistra,
-destra-sinistra, sinistra-destra, come già fatto in `Left is Better than Right
-for Reducing Nondeterminism of NFAs`.
+## Test
+Mixed tests can be found into `tests` folder, while multiple batches
+can be found into `TESTS`. Each batch is distinguished from the others
+based on the length of the regular expression used for generating
+each NFA and on vocabulary size.
 
-## 4. Realizzata una struttura ausiliaria per l'utilizzo dei preordini
-In `Reducing the size of NFAs by using equivalences and preorders` sono
-enumerate le condizioni per le quali due stati possono essere uniti usando le
-relazioni di preordine. Per semplificare l'uso delle relazioni, viene creata una
-tabella in cui ad ogni relazione di preordine destro e sinistro `(p, q)` viene
-associata una tripla di booleani `(right, left, loop)` in cui `right` e `left`
-sono `true` se `(p, q)` appartiene all'insieme di preordini destro e sinistro,
-mentre `loop` è `true` se esiste un ciclo da `p` in `p`.
+New tests can be generated using `generate_example.py` script and
+providing as argument: output folder, number of NFAs of each batch
+and vocabulary size.
