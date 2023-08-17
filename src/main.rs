@@ -90,15 +90,10 @@ fn main() {
             "Left Eq",
             "Right-Left Eq",
             "Left-Right Eq",
-            "Reason priority",
-            "SCC all",
-            "SCC right",
-            "SCC left",
-            "SCC pre",
-            "Left SCCs",
-            "Right SCCs",
-            "Right-Left SCCs",
-            "All SCCs",
+            "SCC All",
+            "SCC Right",
+            "SCC Left",
+            "SCC Pre"
         ],
     );
 }
@@ -149,7 +144,7 @@ fn print_results(sizes: &Vec<Vec<usize>>, titles: Vec<&str>) {
         "Res".cell().justify(Justify::Center).italic(true),
         "-".cell().justify(Justify::Center).italic(true),
     ];
-    for red in &avg_red[..avg_red.len() - 4] {
+    for red in &avg_red {
         let red_str = format!("{:.3}%", red);
         summary_row.push(red_str.cell().justify(Justify::Center).italic(true));
     }

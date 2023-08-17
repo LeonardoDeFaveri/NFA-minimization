@@ -54,18 +54,18 @@ def generate_single_example(regex, file_name):
     out.write(rel_str(left_rel))
     out.close()
 
-    r_nfa = nfa.rEquivNFA()
-    lr_nfa = r_nfa.lEquivNFA()
-    del r_nfa
-    lr_nfa.display('RL1')
+    #r_nfa = nfa.rEquivNFA()
+    #lr_nfa = r_nfa.lEquivNFA()
+    #del r_nfa
+    #lr_nfa.display('RL1')
 
-    l_nfa = nfa.lEquivNFA()
-    lr_nfa = l_nfa.rEquivNFA()
-    del l_nfa
-    lr_nfa.display('LR1')
+    #l_nfa = nfa.lEquivNFA()
+    #lr_nfa = l_nfa.rEquivNFA()
+    #del l_nfa
+    #lr_nfa.display('LR1')
 
-    min_nfa = nfa.lrEquivNFA()
-    min_nfa.display('min')
+    #min_nfa = nfa.lrEquivNFA()
+    #min_nfa.display('min')
 
 #generate_single_example('(aaa)*(aab+ab+b)', 'p')
 #os.abort()

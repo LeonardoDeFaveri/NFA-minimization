@@ -36,7 +36,7 @@ pub fn update_graph(
 ) {
     let mut to_remove = HashSet::new();
 
-    // Manages edges of type (other, old_node)    
+    // Manages edges of type (other, old_node)
     for (source, dest, _) in graph.edges_directed(old_node, Direction::Incoming) {
         if !scc.contains(&source) {
             to_add_in.insert((source, new_node));

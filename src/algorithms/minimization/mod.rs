@@ -437,7 +437,7 @@ where
         let mut sccs = [
             (get_biggest_scc(&sccs_left), &mut graph_left),
             (get_biggest_scc(&sccs_pre), &mut graph_pre),
-            (get_biggest_scc(&sccs_right), &mut graph_right)
+            (get_biggest_scc(&sccs_right), &mut graph_right),
         ];
         // While `sccs_left` biggest SCC is non trivial, merges it.
         if sccs[0].0.len() == 1 {

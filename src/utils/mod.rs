@@ -19,9 +19,7 @@ pub struct Sizes {
     pub left_eq: usize,
     pub right_left_eq: usize,
     pub left_right_eq: usize,
-    pub reason: usize,
     pub sccs: (usize, usize, usize, usize),
-    pub sccs_count: (usize, usize, usize, usize),
 }
 
 impl Sizes {
@@ -32,15 +30,10 @@ impl Sizes {
             self.left_eq,
             self.right_left_eq,
             self.left_right_eq,
-            self.reason,
             self.sccs.0,
             self.sccs.1,
             self.sccs.2,
             self.sccs.3,
-            self.sccs_count.0,
-            self.sccs_count.1,
-            self.sccs_count.2,
-            self.sccs_count.3,
         ]
     }
 }
@@ -53,9 +46,7 @@ impl Default for Sizes {
             left_eq: 0,
             right_left_eq: 0,
             left_right_eq: 0,
-            reason: 0,
             sccs: (0, 0, 0, 0),
-            sccs_count: (0, 0, 0, 0),
         }
     }
 }
@@ -128,9 +119,9 @@ pub fn minimize(
     let left_right_eq = res.len();
 
     // Minimize using merging rules in order: iii, i, ii
-    let res =
-        algorithms::minimization::preorders_with_priority(nfa.states(), &table, &right, &left);
-    let reason = res.len();
+    //let res =
+    //    algorithms::minimization::preorders_with_priority(nfa.states(), &table, &right, &left);
+    //let reason = res.len();
 
     // Minimize using strongly connected components
     let res = algorithms::minimization::preorders_with_sccs(nfa.states(), &table);
@@ -145,7 +136,7 @@ pub fn minimize(
     let res = algorithms::minimization::preorders_with_sccs_pre(nfa.states(), &table);
     let sccs_pre = res.len();
 
-    let sccs_count = count_sccs(nfa.states(), &table);
+    //let sccs_count = count_sccs(nfa.states(), &table);
 
     Sizes {
         original,
@@ -153,9 +144,7 @@ pub fn minimize(
         left_eq,
         right_left_eq,
         left_right_eq,
-        reason,
         sccs: (sccs, sccs_right, sccs_left, sccs_pre),
-        sccs_count,
     }
 }
 
@@ -256,7 +245,12 @@ where
     let sccs_rl = petgraph::algo::kosaraju_scc(&graph_rl);
     let sccs_all = petgraph::algo::kosaraju_scc(&graph_all);
 
-    (sccs_left.len(), sccs_right.len(), sccs_rl.len(), sccs_all.len())
+    (
+        sccs_left.len(),
+        sccs_right.len(),
+        sccs_rl.len(),
+        sccs_all.len(),
+    )
 }
 
 pub fn read_rel(source_file: &str) -> HashSet<(String, String)> {
